@@ -1,1 +1,1 @@
-from TSS_Python import GetToken
+from TSS_Python import *
