@@ -1,0 +1,31 @@
+#False data to be used to test and update parsing. 
+
+#Apache
+192.168.1.1 - - [10/Oct/2023:12:34:56 +0000] "GET /index.html" 200 1234
+192.168.1.2 - - [10/Oct/2023:12:35:00 +0000] "POST /submit" 404 5678
+
+IIS
+2023-10-10 12:34:56 ::1 GET /index.html 200 1234 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.4567.89 Safari/537.36"
+2023-10-10 12:35:00 ::1 POST /submit 404 5678 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.4567.89 Safari/537.36"
+
+Syslog
+Oct 10 12:34:56 myhost kernel[1234]: This is a syslog message.
+Oct 10 12:35:00 myhost sshd[5678]: SSH login from 192.168.1.2
+
+CEF
+CEF:0|MyVendor|MyProduct|1.0|12345|MyEvent|5|src=192.168.1.1 dest=192.168.1.2
+CEF:0|MyVendor|MyProduct|1.0|54321|AnotherEvent|3|src=192.168.1.2 dest=192.168.1.1
+
+YARA
+rule ExampleRule {
+    strings:
+        $magic_string = "ExampleString"
+    condition:
+        $magic_string
+}
+rule AnotherRule {
+    strings:
+        $another_string = "AnotherString"
+    condition:
+        $another_string
+}
