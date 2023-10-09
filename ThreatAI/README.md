@@ -2,6 +2,10 @@
 
 This project is a POC to create a central database that takes big data from several open source threat-intelligence systems, combine this data with homegrown threat intelligence and analyse them using AI to % match against a list of indicators observed from within a given environment. The system must then return an approximate match to a user that feeds an ML engine by rating the match accordingly.
 
+# Purpose
+
+To provide cybersecurity teams the ability to create possible detections in the gaps of their security tool suite that are not able to be integrated, connecting these ecosystems and providing a threat intelligence capability to security systems that hold bast amounts of valuable datapoints that are unused.
+
 ## Components
 
 The system from a high level perspective is divided into the following components:
@@ -28,6 +32,3 @@ The systems tech stack likely changes as the POC progresses and capabilities and
 <div style="text-align:center">
     <img src="https://github.com/BurnyMack/securityscripts/assets/58530324/5a83ae17-6bf2-4bfd-99e6-f0c2c88a6363" />
 </div>
-
-
-
