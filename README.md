@@ -2,6 +2,9 @@
   <img src="https://github.com/BurnyMack/securityscripts/blob/main/assets/Security%20Scripts.png" alt="GitHub Logo">
 </div>
 
+## [About]()
+This project is a repository containing various scripts, CLI tools and integrations relating to cybersecurity IR and operational processes. 
+
 ## [Getting Started]()
 
 To get started, simply clone the repository to your local machine by running the following command:
