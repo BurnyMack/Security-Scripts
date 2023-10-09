@@ -24,3 +24,10 @@ The systems tech stack likely changes as the POC progresses and capabilities and
 [Artificial Intelligence &amp; ML](https://pytorch.org/) (PyTorch)
 
 # Design
+
+<div style="text-align:center">
+    <img src="https://github.com/BurnyMack/securityscripts/assets/58530324/5a83ae17-6bf2-4bfd-99e6-f0c2c88a6363" />
+</div>
+
+
+
