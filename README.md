@@ -1,4 +1,7 @@
-[# securityscripts](https://github.com/BurnyMack/securityscripts/blob/main/assets/Security%20Scripts.png?raw=true)
+<div align="center">
+  <img src="https://github.com/BurnyMack/securityscripts/blob/main/assets/Security%20Scripts.png" alt="GitHub Logo">
+</div>
+
 
 ## [Getting Started]()
 
