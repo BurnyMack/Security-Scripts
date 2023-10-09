@@ -3,4 +3,4 @@ pandas==2.1.1
 pynput==1.7.6
 Requests==2.31.0
 scapy==2.5.0
-setuptools==65.5.0
+setuptools==65.5.1
