@@ -4,7 +4,7 @@ This project is a POC to create a central database that takes big data from seve
 
 # Purpose
 
-To provide cybersecurity teams the ability to create possible detections in the gaps of their security tool suite that are not able to be integrated, connecting these ecosystems and providing a threat intelligence capability to security systems that hold bast amounts of valuable datapoints that are unused.
+To provide cybersecurity teams the ability to create possible detections in the gaps of their security tool suite that are not able to be integrated, connecting these ecosystems and providing a threat intelligence capability to security systems that hold vast amounts of valuable datapoints that are unused.
 
 ## Components
 
