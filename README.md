@@ -2,7 +2,6 @@
   <img src="https://github.com/BurnyMack/securityscripts/blob/main/assets/Security%20Scripts.png" alt="GitHub Logo">
 </div>
 
-
 ## [Getting Started]()
 
 To get started, simply clone the repository to your local machine by running the following command:
@@ -13,7 +12,7 @@ git clone https://github.com/BurnyMack/securityscripts.git
 
 ## [License]()
 
-* This repository is licensed under the MIT License. Please see the LICENSE file for more information.
+This repository is licensed under the MIT License. Please see the LICENSE file for more information.
 
 ## [Disclaimer]()
 
