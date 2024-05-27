@@ -26,8 +26,9 @@ import volatility.plugins.common as common
 
 from volatility.renderers import TreeGrid
 
+
 class PathCheck(common.AbstractWindowsCommand):
-    '''Checks image paths to look for unusual start locations'''
+    """Checks image paths to look for unusual start locations"""
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
@@ -51,36 +52,48 @@ class PathCheck(common.AbstractWindowsCommand):
 
             if temp in imgpath.lower():
                 response = "Possible Temp location"
-                yield (0, [
-                    str(task.UniqueProcessId),
-                    str(task.ImageFileName),
-                    str(response),
-                    str(imgpath),
-                ])
+                yield (
+                    0,
+                    [
+                        str(task.UniqueProcessId),
+                        str(task.ImageFileName),
+                        str(response),
+                        str(imgpath),
+                    ],
+                )
             if tmp in imgpath.lower():
                 response = "Possible Temp location"
-                yield (0, [
-                    str(task.UniqueProcessId),
-                    str(task.ImageFileName),
-                    str(response),
-                    str(imgpath),
-                ])
+                yield (
+                    0,
+                    [
+                        str(task.UniqueProcessId),
+                        str(task.ImageFileName),
+                        str(response),
+                        str(imgpath),
+                    ],
+                )
             if user in imgpath.lower():
                 response = "Possible User location"
-                yield (0, [
-                    str(task.UniqueProcessId),
-                    str(task.ImageFileName),
-                    str(response),
-                    str(imgpath),
-                ])
+                yield (
+                    0,
+                    [
+                        str(task.UniqueProcessId),
+                        str(task.ImageFileName),
+                        str(response),
+                        str(imgpath),
+                    ],
+                )
             if down in imgpath.lower():
                 response = "Possible Download location"
-                yield (0, [
-                    str(task.UniqueProcessId),
-                    str(task.ImageFileName),
-                    str(response),
-                    str(imgpath),
-                ])
+                yield (
+                    0,
+                    [
+                        str(task.UniqueProcessId),
+                        str(task.ImageFileName),
+                        str(response),
+                        str(imgpath),
+                    ],
+                )
 
     def unified_output(self, data):
         tree = [

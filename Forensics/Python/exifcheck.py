@@ -8,6 +8,7 @@ import docx
 import sys
 import getopt
 
+
 def meta(doc):
     metadata = {}
     prop = doc.core_properties
@@ -25,16 +26,17 @@ def meta(doc):
     metadata["version"] = prop.version
     return metadata
 
+
 def main(argv):
-    input = ''
+    input = ""
     try:
-        opts, args = getopt.getopt(argv,"hi:")
+        opts, args = getopt.getopt(argv, "hi:")
     except getopt.GetoptError:
-        print ("Use: exifcheck.py -i <inputfile>.docx")
+        print("Use: exifcheck.py -i <inputfile>.docx")
         sys.exit(2)
     for opt, arg in opts:
-        if opt == '-h':
-            print ("exifcheck.py -i <inputfle>.docx")
+        if opt == "-h":
+            print("exifcheck.py -i <inputfle>.docx")
             sys.exit()
         elif opt in ("-i"):
             input = arg
@@ -46,6 +48,7 @@ def main(argv):
         print("Modified: " + str(metadata_dict["modified"]))
         print("Title: " + str(metadata_dict["title"]))
         print("Language: " + str(metadata_dict["language"]))
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

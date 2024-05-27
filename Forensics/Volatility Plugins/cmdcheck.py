@@ -27,7 +27,7 @@ from volatility.renderers import TreeGrid
 
 
 class CmdCheck(common.AbstractWindowsCommand):
-    '''Checks the handles on any running cmd.exe processes'''
+    """Checks the handles on any running cmd.exe processes"""
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
@@ -61,13 +61,16 @@ class CmdCheck(common.AbstractWindowsCommand):
                 stdoutp = "-"
                 stderror = "-"
 
-            yield (0, [
-                str(proc.ImageFileName),
-                str(pid),
-                str(stdinp),
-                str(stdoutp),
-                str(stderror),
-            ])
+            yield (
+                0,
+                [
+                    str(proc.ImageFileName),
+                    str(pid),
+                    str(stdinp),
+                    str(stdoutp),
+                    str(stderror),
+                ],
+            )
 
     def unified_output(self, data):
 
@@ -77,6 +80,6 @@ class CmdCheck(common.AbstractWindowsCommand):
             ("StdInput", str),
             ("StdOutput", str),
             ("StdError", str),
-            ]
+        ]
 
         return TreeGrid(tree, self.generator(data))

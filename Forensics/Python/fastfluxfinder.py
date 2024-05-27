@@ -2,6 +2,7 @@ from scapy.all import *
 
 dnsRecords = {}
 
+
 def checkPacket(packet):
     if packet.haslayer(DNSRR):
         rrname = packet.getlayer(DNSRR).rrname
@@ -13,12 +14,14 @@ def checkPacket(packet):
             dnsRecords[rrname] = {}
             dnsRecords[rrname].append(rdata)
 
+
 def main():
-    packets = rdpcap('/home/taz/Downloads/fastFlux.pcap')
+    packets = rdpcap("/home/taz/Downloads/fastFlux.pcap")
     for pkt in packets:
         checkPacket(pkt)
     for item in dnsRecords:
-        print('[+] ' + item + ' has ' + str(len(dnsRecords[item])) + ' unique IPs')
+        print("[+] " + item + " has " + str(len(dnsRecords[item])) + " unique IPs")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

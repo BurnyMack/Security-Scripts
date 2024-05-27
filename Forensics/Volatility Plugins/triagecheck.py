@@ -44,7 +44,7 @@ from volatility.renderers import TreeGrid
 
 
 class TriageCheck(common.AbstractWindowsCommand):
-    '''Checks for OBVIOUS signs of tampering - please note limitations'''
+    """Checks for OBVIOUS signs of tampering - please note limitations"""
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
@@ -65,7 +65,7 @@ class TriageCheck(common.AbstractWindowsCommand):
             # Should only be 1 instance of smss, running from system32
             check = "smss.exe"
             if procname == check:
-                smsscount = smsscount+1
+                smsscount = smsscount + 1
                 # Check number of instances
                 if smsscount > 1:
                     # multiple smss found
@@ -77,7 +77,7 @@ class TriageCheck(common.AbstractWindowsCommand):
                     # valid path
                     holder = "bypass"
                 else:
-                # invalid path
+                    # invalid path
                     response = "SMSS launched from invalid path"
 
             # Check csrss is running from system32
@@ -90,7 +90,7 @@ class TriageCheck(common.AbstractWindowsCommand):
                     # valid path
                     holder = "bypass"
                 else:
-                # invalid path
+                    # invalid path
                     response = "CSRSS launched from invalid path"
 
             # Check services.exe is running from system32
@@ -109,21 +109,48 @@ class TriageCheck(common.AbstractWindowsCommand):
             # Check for CSRSS impersonation
             check = ["cssrss.exe", "cssrs.exe", "csrss.exe"]
             if procname == check:
-            # if task.ImageFilename == [cssrss.exe, cssrs.exe, csrss.exe]:
+                # if task.ImageFilename == [cssrss.exe, cssrs.exe, csrss.exe]:
                 # looks suspicious
                 response = "Possible impersonation attempt - CSRSS"
             # Check for SVCHost impersonation
-            check = ["scvhost.exe", "svch0st.exe", "sscvhost.exe", "svcchost.exe", "scvh0st.exe", "svchozt.exe", "svchot.exe", "scvhot.exe"]
+            check = [
+                "scvhost.exe",
+                "svch0st.exe",
+                "sscvhost.exe",
+                "svcchost.exe",
+                "scvh0st.exe",
+                "svchozt.exe",
+                "svchot.exe",
+                "scvhot.exe",
+            ]
             if procname.lower() == check:
                 # possible impersonation
                 response = "Posible impersonation of SVCHOST.EXE"
             # Check for DLLHOST impersonation
-            check = ["dllh0st.exe", "dllhot.exe", "d1lhost.exe", "dl1host.exe", "d11host.exe", "d11h0st.exe", "dIIhost.exe", "dIIh0st.exe", "dIlhost.exe", "dlIhost.exe"]
+            check = [
+                "dllh0st.exe",
+                "dllhot.exe",
+                "d1lhost.exe",
+                "dl1host.exe",
+                "d11host.exe",
+                "d11h0st.exe",
+                "dIIhost.exe",
+                "dIIh0st.exe",
+                "dIlhost.exe",
+                "dlIhost.exe",
+            ]
             if procname.lower() == check:
                 # possible impersonation
                 response = "Posible impersonation of DLLHOST.EXE"
             # Check for LSASS impersonation
-            check = ["lsas.exe", "lssas.exe", "ls4ss.exe", "lsasss.exe", "lssass.exe", "lsaas.exe"]
+            check = [
+                "lsas.exe",
+                "lssas.exe",
+                "ls4ss.exe",
+                "lsasss.exe",
+                "lssass.exe",
+                "lsaas.exe",
+            ]
             if procname.lower() == check:
                 # possible impersonation
                 response = "Posible impersonation of LSASS.EXE"
@@ -132,7 +159,7 @@ class TriageCheck(common.AbstractWindowsCommand):
             # Check for multiple lsass, eg Stuxnet :-)
             check = "lsass.exe"
             if procname == check:
-                lsasscount = lsasscount+1
+                lsasscount = lsasscount + 1
                 path = str("\system32\lsass.exe")
                 imgpath = str(task.Peb.ProcessParameters.ImagePathName)
                 # Check number of instances
@@ -153,12 +180,12 @@ class TriageCheck(common.AbstractWindowsCommand):
                 holder = "bypass"
                 # Bypass other checks here.
             else:
-                # check for data collection issues 
+                # check for data collection issues
                 # where procname doesn't contain full file name
                 if "." not in procname:
                     holder = "bypass"  # Bypass other checks here.
                 else:
-                    exename, extension = procname.split('.')  # split first bit
+                    exename, extension = procname.split(".")  # split first bit
                     if len(exename) < 3:
                         response = "Unusually short filename"
                     # Check the extension
@@ -168,11 +195,14 @@ class TriageCheck(common.AbstractWindowsCommand):
 
             # output in "Unified Output format"
             if response != "-":
-                yield (0, [
-                    int(pid),
-                    str(procname),
-                    str(response),
-                    ])
+                yield (
+                    0,
+                    [
+                        int(pid),
+                        str(procname),
+                        str(response),
+                    ],
+                )
             else:
                 continue
 
@@ -181,7 +211,6 @@ class TriageCheck(common.AbstractWindowsCommand):
             ("PID", int),
             ("Filename", str),
             ("Triage Response", str),
-            ]
+        ]
 
         return TreeGrid(tree, self.generator(data))
-    

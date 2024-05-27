@@ -1,6 +1,7 @@
 import sys
 import pytsk3
 
+
 def extract_block(image, inode):
     # Open the disk image
     try:
@@ -28,6 +29,7 @@ def extract_block(image, inode):
 
     # Return the data block
     return block
+
 
 if __name__ == "__main__":
     # Check for correct usage

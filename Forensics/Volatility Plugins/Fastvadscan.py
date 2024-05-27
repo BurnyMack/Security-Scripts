@@ -26,7 +26,7 @@ from volatility.renderers import TreeGrid
 
 
 class FastVadScan(common.AbstractWindowsCommand):
-    '''Quick search for suspicious memory sections'''
+    """Quick search for suspicious memory sections"""
 
     def calculate(self):
         addr_space = utils.load_as(self._config)
@@ -44,11 +44,14 @@ class FastVadScan(common.AbstractWindowsCommand):
                     if vad.u.VadFlags.Protection.v() == 6:
                         vf = "Suspicious VAD Flags"
             if vf == "Suspicious VAD Flags":
-                yield (0, [
-                    str(task.ImageFileName),
-                    int(task.UniqueProcessId),
-                    str(vf),
-                ])
+                yield (
+                    0,
+                    [
+                        str(task.ImageFileName),
+                        int(task.UniqueProcessId),
+                        str(vf),
+                    ],
+                )
 
     def unified_output(self, data):
         tree = [
