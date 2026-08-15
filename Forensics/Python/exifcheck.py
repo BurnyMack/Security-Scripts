@@ -14,6 +14,7 @@ import argparse
 import sys
 
 import docx
+from docx.opc.exceptions import PackageNotFoundError
 
 
 def meta(doc):
@@ -41,7 +42,7 @@ def main():
 
     try:
         doc = docx.Document(args.input)
-    except Exception as e:
+    except (OSError, PackageNotFoundError) as e:
         print(f"Error opening {args.input}: {e}", file=sys.stderr)
         sys.exit(1)
 
