@@ -25,12 +25,10 @@ class RamScan(common.AbstractWindowsCommand):
         vf = ""
         for task in data:
             if task.Peb:
-                cmdline = "{0}".format(
-                    str(task.Peb.ProcessParameters.CommandLine or "")
-                ).strip()
+                cmdline = "{0}".format(str(task.Peb.ProcessParameters.CommandLine or "")).strip()
             process_space = task.get_process_address_space()
             for vad in task.VadRoot.traverse():
-                data = process_space.read(vad.Start, 1024)
+                process_space.read(vad.Start, 1024)
                 if vad.u.VadFlags.CommitCharge.v() > 30:
                     if vad.u.VadFlags.Protection.v() == 6:
                         vf = "Suspicious RWX VAD settings"

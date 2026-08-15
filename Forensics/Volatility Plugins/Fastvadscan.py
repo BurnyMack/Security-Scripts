@@ -20,8 +20,8 @@
 #
 
 import volatility.plugins.common as common
-import volatility.win32 as win32
 import volatility.utils as utils
+import volatility.win32 as win32
 from volatility.renderers import TreeGrid
 
 
@@ -39,7 +39,7 @@ class FastVadScan(common.AbstractWindowsCommand):
         for task in data:
             process_space = task.get_process_address_space()
             for vad in task.VadRoot.traverse():
-                data = process_space.read(vad.Start, 1024)
+                process_space.read(vad.Start, 1024)
                 if vad.u.VadFlags.CommitCharge.v() > 30:
                     if vad.u.VadFlags.Protection.v() == 6:
                         vf = "Suspicious VAD Flags"

@@ -2,11 +2,18 @@
 """
 This script extracts some key exif data from a docx file.
 It is not a replacement for exiftool or similar, but it can be used to make exifdata available for other tools.
+
+Usage:
+    exifcheck.py -i report.docx
+
+Requirements:
+    python-docx (pip install python-docx)
 """
 
-import docx
+import argparse
 import sys
-import getopt
+
+import docx
 
 
 def meta(doc):
@@ -27,28 +34,25 @@ def meta(doc):
     return metadata
 
 
-def main(argv):
-    input = ""
+def main():
+    parser = argparse.ArgumentParser(description="Extract key exif data from a docx file.")
+    parser.add_argument("-i", "--input", required=True, help="Path to the .docx file to inspect")
+    args = parser.parse_args()
+
     try:
-        opts, args = getopt.getopt(argv, "hi:")
-    except getopt.GetoptError:
-        print("Use: exifcheck.py -i <inputfile>.docx")
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == "-h":
-            print("exifcheck.py -i <inputfle>.docx")
-            sys.exit()
-        elif opt in ("-i"):
-            input = arg
-        doc = docx.Document(input)
-        print("Opening : " + input)
-        metadata_dict = meta(doc)
-        print("Author: " + str(metadata_dict["author"]))
-        print("Created: " + str(metadata_dict["created"]))
-        print("Modified: " + str(metadata_dict["modified"]))
-        print("Title: " + str(metadata_dict["title"]))
-        print("Language: " + str(metadata_dict["language"]))
+        doc = docx.Document(args.input)
+    except Exception as e:
+        print(f"Error opening {args.input}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print("Opening : " + args.input)
+    metadata_dict = meta(doc)
+    print("Author: " + str(metadata_dict["author"]))
+    print("Created: " + str(metadata_dict["created"]))
+    print("Modified: " + str(metadata_dict["modified"]))
+    print("Title: " + str(metadata_dict["title"]))
+    print("Language: " + str(metadata_dict["language"]))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

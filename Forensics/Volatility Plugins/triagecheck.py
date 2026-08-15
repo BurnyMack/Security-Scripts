@@ -36,10 +36,9 @@
 # along with Volatility.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import volatility.win32 as win32
-import volatility.utils as utils
 import volatility.plugins.common as common
-
+import volatility.utils as utils
+import volatility.win32 as win32
 from volatility.renderers import TreeGrid
 
 
@@ -57,7 +56,6 @@ class TriageCheck(common.AbstractWindowsCommand):
         smsscount = 0
         for task in data:
             response = "-"
-            holder = ""
             procname = str(task.ImageFileName)
             pid = int(task.UniqueProcessId)
 
@@ -72,10 +70,9 @@ class TriageCheck(common.AbstractWindowsCommand):
                     response = "Multiple instances of SMSS found"
                 # Check location
                 imgpath = str(task.Peb.ProcessParameters.ImagePathName)
-                path = str("\system32\smss.exe")
+                path = r"\system32\smss.exe"
                 if path in imgpath.lower():
-                    # valid path
-                    holder = "bypass"
+                    pass  # valid path
                 else:
                     # invalid path
                     response = "SMSS launched from invalid path"
@@ -85,10 +82,9 @@ class TriageCheck(common.AbstractWindowsCommand):
             if procname == check:
                 # Check location
                 imgpath = str(task.Peb.ProcessParameters.ImagePathName)
-                path = str("\system32\csrss.exe")
+                path = r"\system32\csrss.exe"
                 if path in imgpath.lower():
-                    # valid path
-                    holder = "bypass"
+                    pass  # valid path
                 else:
                     # invalid path
                     response = "CSRSS launched from invalid path"
@@ -96,11 +92,10 @@ class TriageCheck(common.AbstractWindowsCommand):
             # Check services.exe is running from system32
             check = "services.exe"
             if procname.lower() == check:
-                path = "\system32\services.exe"
+                path = r"\system32\services.exe"
                 imgpath = str(task.Peb.ProcessParameters.ImagePathName)
                 if path in imgpath.lower():
-                    # valid path
-                    holder = "bypass"
+                    pass  # valid path
                 else:
                     # invalid path
                     response = "Services.exe running from unusual location"
@@ -108,7 +103,7 @@ class TriageCheck(common.AbstractWindowsCommand):
             # Check for impersonation
             # Check for CSRSS impersonation
             check = ["cssrss.exe", "cssrs.exe", "csrss.exe"]
-            if procname == check:
+            if procname.lower() in check:
                 # if task.ImageFilename == [cssrss.exe, cssrs.exe, csrss.exe]:
                 # looks suspicious
                 response = "Possible impersonation attempt - CSRSS"
@@ -123,7 +118,7 @@ class TriageCheck(common.AbstractWindowsCommand):
                 "svchot.exe",
                 "scvhot.exe",
             ]
-            if procname.lower() == check:
+            if procname.lower() in check:
                 # possible impersonation
                 response = "Posible impersonation of SVCHOST.EXE"
             # Check for DLLHOST impersonation
@@ -139,7 +134,7 @@ class TriageCheck(common.AbstractWindowsCommand):
                 "dIlhost.exe",
                 "dlIhost.exe",
             ]
-            if procname.lower() == check:
+            if procname.lower() in check:
                 # possible impersonation
                 response = "Posible impersonation of DLLHOST.EXE"
             # Check for LSASS impersonation
@@ -151,7 +146,7 @@ class TriageCheck(common.AbstractWindowsCommand):
                 "lssass.exe",
                 "lsaas.exe",
             ]
-            if procname.lower() == check:
+            if procname.lower() in check:
                 # possible impersonation
                 response = "Posible impersonation of LSASS.EXE"
 
@@ -160,7 +155,7 @@ class TriageCheck(common.AbstractWindowsCommand):
             check = "lsass.exe"
             if procname == check:
                 lsasscount = lsasscount + 1
-                path = str("\system32\lsass.exe")
+                path = r"\system32\lsass.exe"
                 imgpath = str(task.Peb.ProcessParameters.ImagePathName)
                 # Check number of instances
                 if lsasscount > 1:
@@ -168,8 +163,7 @@ class TriageCheck(common.AbstractWindowsCommand):
                     response = "Multiple instances of LSASS found"
                 # Check lsass is running from system32
                 if path in imgpath.lower():
-                    # valid path
-                    holder = "bypass"
+                    pass  # valid path
                 else:
                     # invalid path
                     response = "lsass.exe running from unusual location"
@@ -177,13 +171,12 @@ class TriageCheck(common.AbstractWindowsCommand):
             # Check for oddly short file length executables - eg. a.exe
             # first, account for system process being the odd one out
             if procname.lower() == "system":
-                holder = "bypass"
-                # Bypass other checks here.
+                pass  # system process is expected, no action needed
             else:
                 # check for data collection issues
                 # where procname doesn't contain full file name
                 if "." not in procname:
-                    holder = "bypass"  # Bypass other checks here.
+                    pass  # incomplete procname, no action needed
                 else:
                     exename, extension = procname.split(".")  # split first bit
                     if len(exename) < 3:
