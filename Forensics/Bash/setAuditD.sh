@@ -1,28 +1,30 @@
 #!/bin/bash
-
-# This file is used to establish some auditing baselines related to CIS controls.
-# STATUS: DRAFT
-# Environment: 64bit Ubuntu
 #
-# based on https://gist.github.com/Neo23x0/9fe88c0c5979e017a389b90fd19ddfee
+# Purpose:
+#   Establishes auditd baseline rules aligned to CIS controls (time changes,
+#   identity, network, MAC policy, logins, permission/access changes,
+#   privileged commands, and common attacker behaviour), based on
+#   https://gist.github.com/Neo23x0/9fe88c0c5979e017a389b90fd19ddfee
+#   STATUS: DRAFT. Environment: 64-bit Ubuntu.
 #
-# USE:
-# ./setAuditD.sh
-# 
-# NOTES:
-# Must be run as root.
-# It assumes auditd is installed - if it isnt:
-#    apt install auditd audispd-plugins
-# 
+# Requirements:
+#   Must be run as root. Assumes auditd is installed — if it isn't:
+#     apt install auditd audispd-plugins
+#
+# Usage:
+#   ./setAuditD.sh
+#
 # Warning:
-# This can be noisy. You should consider tuning any activity logged by this 
-# before using as a SIEM trigger.
+#   This can be noisy. Consider tuning any activity logged by this before
+#   using it as a SIEM trigger.
+
+set -euo pipefail
 
 # Check Requirements
 if [[ $EUID != 0 ]]; then
     echo "[!] This script must be run with root privileges!"
     echo "[!] Exiting"
-    exit 255;
+    exit 255
 else
     echo "[ ] Audit set-up script running. New files will be created with a 60-* prefix."
     echo "[ ] Running with correct privileges."

@@ -1,4 +1,18 @@
 #!/bin/bash
+#
+# Purpose:
+#   Generates a nested-archive "zip bomb" test fixture (a small set of large,
+#   highly-compressible files repeatedly re-archived) for exercising
+#   decompression bomb handling in analysis tooling/pipelines.
+#
+# Requirements:
+#   dd, gzip, tar, seq. Run from a scratch working directory — it creates
+#   and deletes files in the current directory.
+#
+# Usage:
+#   ./mkbomb.sh
+
+set -euo pipefail
 
 echo "#######################"
 echo "# Creating a zipbomb. #"
@@ -9,14 +23,14 @@ dd if=/dev/zero of=database_extract bs=1M count=3096 2>/dev/null
 gzip database_extract
 tar -cf archive.tar database_extract.gz && rm database_extract.gz
 echo "Adding initial loop"
-COUNTS=$(( $RANDOM % 200 + 100))
+COUNTS=$(( RANDOM % 200 + 100 ))
 echo "Creating $COUNTS files."
 for b in $(seq 1 "$COUNTS")
 do
-    dd if=/dev/zero of=sensitive_data_$b.docx bs=1M count=$(( $RANDOM % 8 + 2)) 2>/dev/null
-    gzip -2 sensitive_data_$b.docx
-    tar -rf archive.tar sensitive_data_$b.docx.gz
-    rm sensitive_data_$b.docx*
+    dd if=/dev/zero "of=sensitive_data_${b}.docx" bs=1M count=$(( RANDOM % 8 + 2 )) 2>/dev/null
+    gzip -2 "sensitive_data_${b}.docx"
+    tar -rf archive.tar "sensitive_data_${b}.docx.gz"
+    rm "sensitive_data_${b}.docx"*
 done
 echo "Files created and added to archive.tar"
 gzip archive.tar
@@ -24,7 +38,7 @@ echo "Gzip'd archive"
 echo "Entering second loop"
 for a in {1..11}
 do
-    cp archive.tar.gz archive_$a.tar.gz
+    cp archive.tar.gz "archive_${a}.tar.gz"
 done
 rm archive.tar.gz
 echo "Creating tar archive"
@@ -34,7 +48,7 @@ rm archive_*
 echo "Secondary cycle"
 for a in {1..20}
 do
-    cp ImportantData.tgz Commercially_ImportantData_Section_$a.tgz
+    cp ImportantData.tgz "Commercially_ImportantData_Section_${a}.tgz"
 done
 rm ImportantData.tgz
 echo "Creating final archive"

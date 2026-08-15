@@ -1,4 +1,18 @@
 #!/bin/bash
+#
+# Purpose:
+#   Demonstrates how file timestamps (creation/access/modification) change
+#   across create, access, modify, copy, and move/rename operations, logging
+#   each step's `stat` output to ./logs/timelog.txt.
+#
+# Requirements:
+#   None beyond coreutils (stat, mkdir, cp, mv). Run from a scratch working
+#   directory — it creates ./testfile, ./renamed, and ./logs here.
+#
+# Usage:
+#   ./timestampCheck.sh
+
+set -euo pipefail
 
 clear
 echo "[ ] This script will test timestamps."
