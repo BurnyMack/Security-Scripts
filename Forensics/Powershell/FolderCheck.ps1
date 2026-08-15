@@ -1,13 +1,27 @@
-#
-# This script searches a given folder and returns the Name, Modification timestamps and
-# Creation timestamps ($SI) for any subfolders in CSV format.
-#
-# To use:
-#    Change <DIRECTORY PATH HERE> to the folder you want to check.
-#    Change <OUTPUT FILENAME> to the path/filename of the CSV you want to create.
+<#
+.SYNOPSIS
+Reports the Name, Creation, and Last Modified timestamps for every subfolder of a given folder.
 
-$directoryPath = "<DIRECTORY PATH HERE>"
-$subfolders = Get-ChildItem -Path $directoryPath -Directory
+.DESCRIPTION
+Searches a given folder and returns the Name, Modification timestamp and Creation timestamp
+($SI) for any subfolders, writing the results to a CSV file.
+
+.PARAMETER DirectoryPath
+The folder to scan for subfolders.
+
+.PARAMETER OutputPath
+Path/filename of the CSV to create.
+
+.EXAMPLE
+.\FolderCheck.ps1 -DirectoryPath C:\Users -OutputPath C:\DFIRLOGS\folders.csv
+#>
+
+param(
+    [Parameter(Mandatory=$true)][string]$DirectoryPath,
+    [Parameter(Mandatory=$true)][string]$OutputPath
+    )
+
+$subfolders = Get-ChildItem -Path $DirectoryPath -Directory
 
 $folderInfo = @()
 
@@ -23,4 +37,4 @@ foreach ($subfolder in $subfolders) {
     $folderInfo += $folderObject
 }
 
-$folderInfo | Export-Csv -Path "<OUTPUT FILENAME>" -NoTypeInformation
+$folderInfo | Export-Csv -Path $OutputPath -NoTypeInformation
