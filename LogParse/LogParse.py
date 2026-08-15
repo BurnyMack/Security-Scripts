@@ -1,8 +1,20 @@
-import re, dpkt, socket
+"""
+Regex/dpkt-based parsers for Apache, IIS, syslog, CEF, pcap, and YARA-rule
+input, one method per format, each returning a list of dicts.
+
+Library module — import LogParse and call one of its format methods; no CLI.
+Note: this is a separate, more complete implementation than the LogParser
+class embedded in CLIParse.py, which only wires up the Apache method. The two
+are not currently connected — see LogParse/CLIParse.py's docstring.
+"""
+
+import re
+import socket
+
+import dpkt
 
 
 class LogParse:
-
     def __init__(self, data):
         self.data = data
 
@@ -10,7 +22,7 @@ class LogParse:
         log_pattern = r'(?P<ip>\S+) - - \[(?P<timestamp>.*?)\] "(?P<request>.*?)" (?P<status>\d+) (?P<size>\d+)'
         log_regex = re.compile(log_pattern)
         results = []
-        with open(self.data, "r") as log_file:
+        with open(self.data) as log_file:
             for line in log_file:
                 match = log_regex.search(line)
                 if match:
@@ -35,7 +47,7 @@ class LogParse:
         log_pattern = r'^(\S+) (\S+) (\S+) \[([\w:/]+\s[+\-]\d{4})\] "(\S+) (\S+) (\S+)" (\d+) (\d+) "([^"]*)" "([^"]*)"'
         iis_regex = re.compile(log_pattern)
         results = []
-        with open(self.data, "r") as log_file:
+        with open(self.data) as log_file:
             for line in log_file:
                 match = iis_regex.match(line)
                 if match:
@@ -62,7 +74,7 @@ class LogParse:
         log_pattern = r"(\S+ \d+ \d+:\d+:\d+) (\S+) (\S+)\[([\d]+)\]: (.*)"
         syslog_regex = re.compile(log_pattern)
         results = []
-        with open(self.data, "r") as log_file:
+        with open(self.data) as log_file:
             for line in log_file:
                 match = syslog_regex.match(line)
                 if match:
@@ -84,12 +96,10 @@ class LogParse:
         return results
 
     def CEF(self):
-        log_pattern = (
-            r"CEF:(\d+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(\d+)\|(.+)"
-        )
+        log_pattern = r"CEF:(\d+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(\d+)\|(.+)"
         cef_regex = re.compile(log_pattern)
         results = []
-        with open(self.data, "r") as log_file:
+        with open(self.data) as log_file:
             for line in log_file:
                 match = cef_regex.match(line)
                 if match:
@@ -120,7 +130,7 @@ class LogParse:
         results = []
         with open(self.data, "rb") as f:
             pcap = dpkt.pcap.Reader(f)
-            for ts, buf in pcap:
+            for _ts, buf in pcap:
                 eth = dpkt.ethernet.Ethernet(buf)
                 # Check if it's an IP packet
                 if isinstance(eth.data, dpkt.ip.IP):
@@ -147,7 +157,7 @@ class LogParse:
         yara_pattern = r"rule\s+(\w+)\s+{([\s\S]*?)}"
         yara_regex = re.compile(yara_pattern)
         results = []
-        with open(self.data, "r") as log_file:
+        with open(self.data) as log_file:
             yara_rule = log_file.read()
             matches = yara_regex.findall(yara_rule)
             for match in matches:

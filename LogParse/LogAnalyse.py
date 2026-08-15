@@ -1,9 +1,19 @@
-import pandas as pd
+"""
+Aggregate parsed log records (as produced by LogParse) across sources into a
+central DataFrame, and export per-source and combined sheets to Excel.
+
+Library module — import LogAnalyzer; no CLI.
+
+Requirements:
+    pandas, xlsxwriter
+"""
+
 from datetime import datetime
+
+import pandas as pd
 
 
 class LogAnalyzer:
-
     def __init__(self):
         self.central_dataframe = pd.DataFrame()
         self.log_dataframes = {}
@@ -28,9 +38,7 @@ class LogAnalyzer:
 
     def analyze_and_aggregate(self):
         if not self.central_dataframe.empty:
-            aggregation_result = self.central_dataframe.groupby("Source Type")[
-                "Bytes Sent"
-            ].mean()
+            aggregation_result = self.central_dataframe.groupby("Source Type")["Bytes Sent"].mean()
             print("Aggregation Result:")
             print(aggregation_result)
 
@@ -39,4 +47,4 @@ class LogAnalyzer:
         self.central_dataframe.to_excel(writer, sheet_name="Central Data", index=False)
         for log_type, log_df in self.log_dataframes.items():
             log_df.to_excel(writer, sheet_name=log_type, index=False)
-        writer.save()
+        writer.close()
