@@ -1,15 +1,21 @@
 #!/bin/bash
+set -euo pipefail
 
-# This installs container diff on a Linux workstation.
-# 
-# This script needs to be run as root.
+# Purpose:
+#     Installs container-diff on a Linux workstation.
+#
+# Requirements:
+#     Must be run as root. Internet access to download the release binary.
+#
+# Usage:
+#     ./install_container_diff.sh
 
 # Check perms
 
 if [[ $EUID != 0 ]]; then
     echo "[!] This script must be run with root privileges!"
     echo "[!] Exiting"
-    exit 255;
+    exit 255
 else
     echo "Initial check completed, script is running with correct privileges."
 fi
