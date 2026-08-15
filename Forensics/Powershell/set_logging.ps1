@@ -1,5 +1,19 @@
 <#
-This script is deprecated - please use https://github.com/TazWake/Public/blob/master/Powershell/setAuditing.ps1
+.SYNOPSIS
+Increases Windows event log sizes and enables key audit policy subcategories.
+
+.DESCRIPTION
+Raises MaxSize for the Security/PowerShell/System/Application event logs, enables PowerShell
+module and script block logging, and turns on a broad set of Auditpol success/failure
+subcategories useful for incident response.
+
+.EXAMPLE
+.\set_logging.ps1
+
+.NOTES
+DEPRECATED - use setAuditing.ps1 instead:
+https://github.com/TazWake/Public/blob/master/Powershell/setAuditing.ps1
+Kept here for reference only.
 #>
 
 reg add hklm\system\CurrentControlSet\services\eventlog\Security /v MaxSize /t REG_DWORD /d 524288000 /f
