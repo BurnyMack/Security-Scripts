@@ -102,7 +102,7 @@ class TriageCheck(common.AbstractWindowsCommand):
 
             # Check for impersonation
             # Check for CSRSS impersonation
-            check = ["cssrss.exe", "cssrs.exe", "csrss.exe"]
+            check = ["cssrss.exe", "cssrs.exe"]
             if procname.lower() in check:
                 # if task.ImageFilename == [cssrss.exe, cssrs.exe, csrss.exe]:
                 # looks suspicious
