@@ -1,14 +1,29 @@
-import crypt
+#!/usr/bin/env python3
+"""
+Brute-force a crypt() password hash against a wordlist.
+
+Usage:
+    python hashcrack.py wordlist.txt '$6$abc123...'
+
+Requirements:
+    Unix `crypt` module (stdlib on Linux/macOS; not available on Windows).
+"""
+
 import argparse
+import crypt
+import sys
 
 
 def find_password(filename, hash_val):
-    with open(filename, "r") as password_file:
-        for passwd in password_file:
-            passwd = passwd.strip()  # Strip new line characters
-            hashed_passwd = crypt.crypt(passwd, hash_val)
-            if hashed_passwd == hash_val:
-                return passwd
+    try:
+        with open(filename) as password_file:
+            for passwd in password_file:
+                passwd = passwd.strip()
+                if crypt.crypt(passwd, hash_val) == hash_val:
+                    return passwd
+    except OSError as e:
+        print(f"Error reading wordlist: {e}", file=sys.stderr)
+        sys.exit(1)
     return None
 
 

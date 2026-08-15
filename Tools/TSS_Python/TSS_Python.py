@@ -1,4 +1,20 @@
-import requests, json, os
+"""
+Helper functions for authenticating to and reading/updating secrets in a
+Thycotic/Delinea Secret Server instance over its REST API.
+
+Library module — import GetToken/GetSecret/UpdateSecret; no CLI.
+
+Requirements:
+    requests
+
+Note: the endpoint URL is left as a "<ENDPOINT URL>" placeholder below —
+fill in your Secret Server URL before use.
+"""
+
+import json
+import os
+
+import requests
 
 
 def GetToken(username, password):
@@ -83,11 +99,11 @@ def GetSecret(token, tokenID):
 def UpdateSecret(server_url, token, tokenID, new_secret_value):
     update_url = f"{server_url}/Secrets/{tokenID}"
     headers = {
-        "Authorization": f"Bearer {api_token}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
     updated_secret_data = {
-        "SecretId": secret_id,
+        "SecretId": tokenID,
         "Items": [{"FieldName": "Password", "Value": new_secret_value}],
     }
     updated_secret_json = json.dumps(updated_secret_data)
