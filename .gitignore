@@ -1,20 +1,142 @@
-*.pyc
-*.pyo
-venv/
-env/
+########################################
+# Secrets & credentials — NEVER commit
+########################################
+# Env files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Keys, certs, keystores
+*.key
+*.pem
+*.p12
+*.pfx
+*.der
+*.crt
+*.cer
+*.jks
+*.keystore
+*.asc
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+known_hosts.bak
+
+# Cloud / service credentials
+credentials.json
+credentials.yaml
+credentials.yml
+service-account*.json
+*-service-account.json
+.aws/
+.azure/
+.gcloud/
+.netrc
+gcp-key*.json
+
+# Generic secret-y filenames
+*secret*
+*secrets*
+!**/secrets.example*
+*password*
+!**/*password*.md
+.htpasswd
+
+# Terraform (state/vars can contain resource IDs, IPs, tokens)
+# NOTE: some repos in this workspace (Caldera/TheHive/VulnLab) intentionally
+# commit terraform.tfstate as a live infra record — do NOT apply this section
+# blindly to those repos; this file only governs SecurityScripts.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+.terraform/
+crash.log
+
+########################################
+# Claude Code — local-only config
+########################################
+# Local machine settings (permissions, local paths) — never shared
+.claude/settings.local.json
+.claude/*.local.json
+
+# Local scratch/working notes — NOT project docs like CLAUDE.md/README.md/specs/*.md
+NOTES.md
+TODO.md
+SCRATCH.md
+*.local.md
+.claude-scratch/
+
+########################################
+# Python
+########################################
+__pycache__/
+*.py[cod]
+*$py.class
 *.egg-info/
 *.egg
-*.log
-__pycache__/
-.*.swp
-.*.swo
+venv/
+env/
+.venv/
+.env/
+build/
+dist/
+*.spec
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.coverage
+htmlcov/
+
+########################################
+# Node / JS (for future projects)
+########################################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+########################################
+# OS files
+########################################
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+########################################
+# Editor / IDE
+########################################
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
-*.bak
+*.swp
+*.swo
+.*.swp
+.*.swo
+*~
+
+########################################
+# Logs, temp files, backups
+########################################
+*.log
+logs/
 *.tmp
-*build/
-*dist/
-*.spec
-*.key
+*.bak
+*.old
+*.orig
+
+########################################
+# Local databases / dumps (may contain PII or captured data)
+########################################
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.pcap
+*.pcapng
