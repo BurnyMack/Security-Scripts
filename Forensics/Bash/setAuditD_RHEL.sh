@@ -1,27 +1,30 @@
 #!/bin/bash
-
-# This file is used to establish some auditing baselines related to CIS controls.
-# STATUS: DRAFT
-# Environment: 64bit RHEL/CentOS/Fedora/SuSE
 #
-# based on https://gist.github.com/Neo23x0/9fe88c0c5979e017a389b90fd19ddfee
+# Purpose:
+#   Establishes auditd baseline rules aligned to CIS controls (time changes,
+#   identity, network, MAC policy, logins, permission/access changes,
+#   privileged commands, software management, and common attacker
+#   behaviour), based on
+#   https://gist.github.com/Neo23x0/9fe88c0c5979e017a389b90fd19ddfee
+#   STATUS: DRAFT. Environment: 64-bit RHEL/CentOS/Fedora/SuSE.
 #
-# USE:
-# ./setAuditD.sh
-# 
-# NOTES:
-# Must be run as root.
-# It assumes auditd is installed 
+# Requirements:
+#   Must be run as root. Assumes auditd is already installed.
+#
+# Usage:
+#   ./setAuditD_RHEL.sh
 #
 # Warning:
-# This can be noisy. You should consider tuning any activity logged by this 
-# before using as a SIEM trigger.
+#   This can be noisy. Consider tuning any activity logged by this before
+#   using it as a SIEM trigger.
+
+set -euo pipefail
 
 # Check Requirements
 if [[ $EUID != 0 ]]; then
     echo "[!] This script must be run with root privileges!"
     echo "[!] Exiting"
-    exit 255;
+    exit 255
 else
     echo "[ ] Audit set-up script running. New files will be created with a 60-* prefix."
     echo "[ ] Running with correct privileges."
@@ -214,7 +217,7 @@ echo "-w /usr/bin/pip -p x -k T1072_third_party_software
 -w /usr/bin/gem -p x -k T1072_third_party_software
 -w /usr/bin/luarocks -p x -k T1072_third_party_software
 -w /etc/pacman.conf -p x -k T1072_third_party_software
--w /etc/pacman.d -p x -k T1072_third_party_software" > /etc/audit/rules.d/60-software-management.rules
+-w /etc/pacman.d -p x -k T1072_third_party_software" > /etc/audit/rules.d/60-third-party-software.rules
 
 # Ensure the audit configuration is immutable
 echo "[ ] Setting configuration to immutable."
