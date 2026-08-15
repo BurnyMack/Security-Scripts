@@ -38,3 +38,4 @@ Bash forensic scripts (`Forensics/Bash/*.sh`) and PowerShell scripts (`Forensics
 
 - Scripts here are one-file, dependency-light, and use stdlib `argparse` for CLIs — match that style rather than introducing new frameworks for a single script.
 - Because folders map to independent tools with no shared imports (aside from the top-level `requirements.txt`), prefer self-contained fixes over cross-folder abstractions.
+- Code style/lint conventions (headers, CLI parsing, error handling, per-language format/lint commands) are documented in `CONTRIBUTING.md` — follow it when adding or editing any script.

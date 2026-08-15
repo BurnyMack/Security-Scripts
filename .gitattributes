@@ -1,0 +1,14 @@
+# Force LF for scripts regardless of a contributor's local core.autocrlf —
+# a shebang line with a trailing \r fails to execute on Linux/macOS.
+*.sh text eol=lf
+*.py text eol=lf
+
+# Native Windows scripts are fine with CRLF.
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.pcap binary
