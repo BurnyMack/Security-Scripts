@@ -1,6 +1,20 @@
 #!/bin/bash
+set -uo pipefail
+# NOTE: set -e is intentionally omitted — this converts every .journal file
+# found, and one corrupt/unreadable journal should not abort conversion of
+# the rest.
 
-if [ $# -lt 2 ]; then
+# Purpose:
+#     Converts every systemd .journal file in a directory into a combined
+#     text export, then into a CSV.
+#
+# Requirements:
+#     journalctl.
+#
+# Usage:
+#     ./journalConverter.sh path_to_journals output_file_path
+
+if [[ $# -lt 2 ]]; then
     echo "Usage: $0 path_to_journals output_file_path"
     exit 1
 fi
@@ -8,23 +22,23 @@ fi
 JOURNALS=$1
 OUTPUT=$2
 
-if [ -z "$(find $JOURNALS -name '*.journal')" ]; then
+if [[ -z "$(find "$JOURNALS" -name '*.journal')" ]]; then
     echo "No journal files found in $JOURNALS. This script will exit"
     exit 1
 else
     echo "Journal files found."
 fi
 
-touch $OUTPUT/journal.txt
+touch "$OUTPUT/journal.txt"
 
 echo "! Converting journal files into text."
-cd $JOURNALS
+cd "$JOURNALS" || exit 1
 for f in ./*.journal
 do
     echo "Attempting to convert: $f"
-    journalctl --file $f >> $OUTPUT/journal.txt
+    journalctl --file "$f" >> "$OUTPUT/journal.txt"
 done
 echo "! Journal conversion completed. There may have been errors in the output."
 echo "! Converting text file into CSV."
-sed 's/<\/Data><Data/<\/Data>,<Data/g' $OUTPUT/journal.txt > $OUTPUT/journal.csv
+sed 's/<\/Data><Data/<\/Data>,<Data/g' "$OUTPUT/journal.txt" > "$OUTPUT/journal.csv"
 echo "! Script completed."

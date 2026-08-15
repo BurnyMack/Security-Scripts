@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+set -euo pipefail
 
 # #######################################
 # # This script sets up an Ubuntu-based #
@@ -7,13 +8,16 @@
 # # format.                             #
 # #######################################
 
+# Purpose:
+#     Installs apfs-fuse and its build dependencies so APFS-formatted
+#     evidence images can be mounted and examined on an Ubuntu-based system.
 #
-# Use:
-# ./apfs_setup.sh
+# Requirements:
+#     Must be run with root privileges.
+#     Only works on systems that use apt (Debian/Ubuntu-based).
 #
-# Notes:
-# This script must be run with root permissions.
-# This script only works on systems that use apt.
+# Usage:
+#     ./apfs_setup.sh
 
 
 # Check Requirements

@@ -1,6 +1,15 @@
 #!/bin/bash
+set -euo pipefail
 
-# This simple script is an example of how you can check a live filesystem to see if LVM2 is in use.
+# Purpose:
+#     Example script showing how to check a live filesystem to see if LVM2
+#     is in use.
+#
+# Requirements:
+#     None beyond standard coreutils (grep, mount).
+#
+# Usage:
+#     ./check_lvm2.sh
 
 echo "> Checking for LVM2"
 now=$(date +"%T")

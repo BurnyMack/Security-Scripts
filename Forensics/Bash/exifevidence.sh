@@ -1,30 +1,35 @@
 #!/bin/bash
+set -euo pipefail
 
-# This is a stub, the goal is to build a tool which can be used
-# to search through directories and folders to find documents
-# that have been modified during the time of an incident and then
-# checks to see if the last modified by field looks odd.
+# Purpose:
+#     Stub tool to search a directory for documents modified during an
+#     incident window and flag ones whose "last modified by" field looks odd
+#     (differs from the creator).
 #
-# USE
-# filename.sh path start-date end-date
+# Requirements:
+#     exiftool
 #
-# EXAMPLE
+# Usage:
+#     ./exifevidence.sh path [start-date] [end-date]
 #
-# ./exifevidence.sh /mnt/ntfs/c/user/administrator/documents 
+# Example:
+#     ./exifevidence.sh /mnt/ntfs/c/user/administrator/documents
 
-# REQUIRES
-# - exiftool
+if [[ -z "${1:-}" ]]; then
+    echo "[!] Usage: $0 path [start-date] [end-date]"
+    exit 1
+fi
 
 FOLDER="$1"
-SDATE="$2"
-EDATE="$3"
+SDATE="${2:-}"
+EDATE="${3:-}"
 
 # Check dates exist
-if [ -z "$2" ]
+if [[ -z "$SDATE" ]]
 then
     SDATE=$(date -d '1 day ago' +%F)
 fi
-if [ -z "$3" ]
+if [[ -z "$EDATE" ]]
 then
     EDATE=$(date +%F)
 fi
@@ -47,7 +52,8 @@ fi
 echo -e "\n[ ] Checking EXIFdata to look for suspicious modifications.\n    This search will look for $DSTRING.\n    If this is incorrect please run it again with the correct dates."
 echo -e "    -------------------------------------------------------------------\n"
 
-find $FOLDER -name "*.*" -type f $DATES -exec sh -c '
+# shellcheck disable=SC2086 # $DATES must expand into separate `find` predicate tokens
+find "$FOLDER" -name "*.*" -type f $DATES -exec sh -c '
     for FILE do
         lastmod=$(exiftool "$FILE" | grep "Last Modified By" | cut -d':' -f2 | xargs)
         if [ -z "$lastmod" ]
@@ -67,11 +73,11 @@ find $FOLDER -name "*.*" -type f $DATES -exec sh -c '
         fi
         if [ "$lastmod" != "$author" ]
         then
-            echo "\n[!] $FILE, was last modified by a differemt account than its creator."
-            echo "    This file was created by $author but modified by $lastmod." 
-            echo "    The modification time is $modtime, and the language pack in use is $language.\n"
+            echo -e "\n[!] $FILE, was last modified by a different account than its creator."
+            echo "    This file was created by $author but modified by $lastmod."
+            echo -e "    The modification time is $modtime, and the language pack in use is $language.\n"
         else
-            echo "The documnet $FILE appears unchanged."
+            echo "The document $FILE appears unchanged."
         fi
     done
 ' exec-sh {} +
