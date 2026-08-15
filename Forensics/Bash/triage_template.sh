@@ -225,7 +225,6 @@ if [[ -f "$DATA/root/.ssh/known_hosts" ]]; then
     hashfile "$EVIDENCE/homefolders/root_known_hosts.txt"
 fi
 # Gather users
-USRNAMES=$(grep sh "$DATA/etc/passwd" | grep -v nologin | grep -v root | grep -v lib | cut -d':' -f 6 | cut -d'/' -f3 | sort | uniq | sed '/^$/d')
 for i in $USRNAMES
 do
     echo "- Exporting user folder listings."

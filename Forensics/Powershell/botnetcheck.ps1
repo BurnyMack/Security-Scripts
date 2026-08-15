@@ -57,14 +57,15 @@ $cmd = netstat -nao | Select-String $BotNetIP
 foreach ($element in $cmd)
 {
     $data = $element -split ' ' | Where-Object {$_ -ne ''}
+    $proc = Get-Process | Where-Object {$_.ID -eq $data[4]}
     $ConnCheck = @{
         'Local IP : Port#'=$data[1];
         'Remote IP : Port#'=$data[2];
         'Process ID'= $data[4];
-        'Process Name'=((Get-Process |Where-Object {$_.ID -eq $data[4]})).Name
-        'Process File Path'=((Get-Process |Where-Object {$_.ID -eq $data[4]})).path
-        'Process Start Time'=((Get-Process |Where-Object {$_.ID -eq $data[4]})).starttime
-        'Associated DLLs and Path'=((Get-Process |Where-Object {$_.ID -eq $data[4]})).Modules |Select-Object @{Name='Modules';Expression={$_.filename -join '; ' } } |Out-String
+        'Process Name'=$proc.Name
+        'Process File Path'=$proc.path
+        'Process Start Time'=$proc.starttime
+        'Associated DLLs and Path'=$proc.Modules |Select-Object @{Name='Modules';Expression={$_.filename -join '; ' } } |Out-String
         }
     New-Object -TypeName psobject -Property $ConnCheck | Out-File -Append $LogFile -Encoding ascii
  }
