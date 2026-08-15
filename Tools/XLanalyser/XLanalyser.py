@@ -29,10 +29,12 @@ class XLanalyser:
 
     def save(self, output_file):
         if output_file.endswith(".csv"):
-            self.read()[0].to_csv(output_file)
+            summary_stats, null_counts = self.read()
+            summary_stats.to_csv(output_file)
         elif output_file.endswith(".xlsx"):
+            summary_stats, null_counts = self.read()
             with pd.ExcelWriter(output_file) as writer:
-                self.read()[0].to_excel(writer, sheet_name="Summary Stats")
-                self.read()[1].to_excel(writer, sheet_name="Null Counts")
+                summary_stats.to_excel(writer, sheet_name="Summary Stats")
+                null_counts.to_excel(writer, sheet_name="Null Counts")
         else:
             raise ValueError("Unsupported output file format. Please use CSV or XLSX.")
