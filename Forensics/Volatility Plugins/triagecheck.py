@@ -129,10 +129,10 @@ class TriageCheck(common.AbstractWindowsCommand):
                 "dl1host.exe",
                 "d11host.exe",
                 "d11h0st.exe",
-                "dIIhost.exe",
-                "dIIh0st.exe",
-                "dIlhost.exe",
-                "dlIhost.exe",
+                "diihost.exe",
+                "diih0st.exe",
+                "dilhost.exe",
+                "dlihost.exe",
             ]
             if procname.lower() in check:
                 # possible impersonation
