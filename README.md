@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/BurnyMack/securityscripts/blob/main/assets/Security%20Scripts.png" alt="GitHub Logo">
+  <img src="https://github.com/BurnyMack/Security-Scripts/blob/main/assets/Security%20Scripts.png" alt="GitHub Logo">
 </div>
 
 ## [About]()
@@ -10,7 +10,7 @@ This project is a repository containing various scripts, CLI tools and integrati
 To get started, simply clone the repository to your local machine by running the following command:
 
 ```
-git clone https://github.com/BurnyMack/securityscripts.git
+git clone https://github.com/BurnyMack/Security-Scripts.git
 ```
 
 ## [License]()
