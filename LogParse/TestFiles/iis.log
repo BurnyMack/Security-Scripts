@@ -1,0 +1,2 @@
+2023-10-10 12:34:56 ::1 GET /index.html 200 1234 "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+2023-10-10 12:35:00 ::1 POST /submit 404 5678 "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"

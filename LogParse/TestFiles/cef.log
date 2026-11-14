@@ -1,0 +1,2 @@
+CEF:0|MyVendor|MyProduct|1.0|12345|MyEvent|5|src=192.168.1.1 dest=192.168.1.2
+CEF:0|MyVendor|MyProduct|1.0|54321|AnotherEvent|3|src=192.168.1.2 dest=192.168.1.1

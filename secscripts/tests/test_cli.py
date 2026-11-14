@@ -57,3 +57,20 @@ def test_bad_output_format_rejected():
     with pytest.raises(SystemExit):
         parser.parse_args(["--output-format", "yaml"])
     assert "yaml" not in OUTPUT_FORMATS
+
+
+def test_custom_output_formats():
+    parser = build_parser(
+        "demo tool",
+        output_formats=("json", "csv", "text", "xlsx"),
+        default_format="xlsx",
+    )
+    args = parser.parse_args([])
+    assert args.output_format == "xlsx"
+    args = parser.parse_args(["--output-format", "xlsx"])
+    assert args.output_format == "xlsx"
+
+
+def test_default_format_must_be_a_choice():
+    with pytest.raises(ValueError):
+        build_parser("demo tool", default_format="xlsx")  # not in default formats
