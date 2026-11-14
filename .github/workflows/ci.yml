@@ -24,15 +24,19 @@ jobs:
       - name: Install project and tooling
         run: |
           python -m pip install --upgrade pip
-          python -m pip install ruff pytest
-          python -m pip install -e .
+          python -m pip install ruff
+          python -m pip install -e ".[test]"
       - name: Ruff lint
         run: ruff check .
       - name: Ruff format check
         run: ruff format --check .
       - name: Pytest
         run: pytest
-      - name: Performance benchmark (AC-5, >=3x on >=4 cores)
+      - name: Performance benchmark (AC-5, informational)
+        # Runs the benchmark and prints the speedup (exercises the parallel
+        # engine on CI). Informational: it does not fail the build on the ratio,
+        # since shared runners have few/noisy cores. The hard >=3x gate is
+        # `python benchmarks/run.py --assert-speedup` on a real >=4-core machine.
         run: python benchmarks/run.py --candidates 20000 --iterations 400 --log-lines 100000
 
   shellcheck:

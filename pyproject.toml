@@ -14,6 +14,23 @@ dependencies = []
 # Tools that need extras import them directly; this lets `pip install -e .[dev]`
 # pull the test runner without touching the repo-wide requirements.txt.
 dev = ["pytest>=8"]
+# Everything CI needs to collect and run the test suite: pytest plus the
+# third-party runtime deps the in-scope tools import at load time. Deliberately
+# excludes the heavy/legacy deps that don't build on modern Python
+# (dpkt_fix, pytsk3) and the Py2 volatility framework — the code imports those
+# lazily, and the Volatility plugins are tested statically (AST), so the suite
+# runs without them.
+test = [
+    "pytest>=8",
+    "PyYAML==6.0.2",
+    "python-docx==1.2.0",
+    "Requests==2.34.2",
+    "pandas==3.0.5",
+    "openpyxl==3.1.5",
+    "XlsxWriter==3.2.9",
+    "passlib==1.7.4",
+    "Faker==40.36.0",
+]
 
 [tool.setuptools]
 # The repo is a grab-bag of standalone scripts; only the shared helper is a
