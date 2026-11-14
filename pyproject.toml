@@ -32,3 +32,4 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "Forensics/Volatility Plugins/*.py" = ["UP"] # third-party framework plugins; leave their style alone beyond hygiene fixes
+"Malware/*.py" = ["UP"] # out of scope (spec non-goal: left untouched); exempt from py311 modernization rewrites
