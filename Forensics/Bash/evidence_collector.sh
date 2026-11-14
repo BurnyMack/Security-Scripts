@@ -276,6 +276,18 @@ else
     ewfinfo "$IMAGEFILENAME.E01" > "$EVIDENCEPATH/ewfinfo.txt"
 fi
 
+# Evidence integrity manifest: SHA-256 every collected file (RFC 3227). Written
+# before the logfile is finalised; the manifest itself and the logfile_hash are
+# excluded so the set is stable.
+MANIFEST="$EVIDENCEPATH/manifest.sha256"
+echo "[ ] Generating SHA-256 manifest of collected evidence"
+: > "$MANIFEST"
+while IFS= read -r -d '' file; do
+    sha256sum "$file" >> "$MANIFEST"
+done < <(find "$EVIDENCEPATH" -type f ! -name "manifest.sha256" ! -name "logfile_hash.txt" -print0)
+echo "[+] SHA-256 manifest written to $MANIFEST" >> "$LOGFILE"
+chmod 444 "$MANIFEST"
+
 # Close down
 dtg=$(date | cut -d" " -f4,5)
 echo "Data collection complete at $dtg" >> "$LOGFILE"
