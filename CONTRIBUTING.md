@@ -107,12 +107,15 @@ Conventions for directly-run Python tools:
   `try/catch` and a clear error message — don't let a collection step fail
   silently.
 - **Lint**: [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer)
-  must run clean with the default rule set. Any intentionally-ignored rule
-  needs a `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` with a
-  reason.
+  must run clean using the repo settings file `PSScriptAnalyzerSettings.psd1`,
+  which runs the default rules except two intentional, documented exclusions
+  (`PSAvoidUsingWriteHost` — colored interactive console output is deliberate;
+  `PSAvoidUsingBrokenHashAlgorithms` — MD5 is used for chain-of-custody, with a
+  SHA-256 manifest alongside). Any further intentionally-ignored rule needs a
+  `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` with a reason.
   ```
   Install-Module -Name PSScriptAnalyzer -Scope CurrentUser
-  Invoke-ScriptAnalyzer -Path Forensics/Powershell -Recurse
+  Invoke-ScriptAnalyzer -Path Forensics/Powershell -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
   ```
 
 ## General

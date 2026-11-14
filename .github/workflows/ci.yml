@@ -61,7 +61,7 @@ jobs:
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
-          $results = Invoke-ScriptAnalyzer -Path Forensics/Powershell -Recurse
+          $results = Invoke-ScriptAnalyzer -Path Forensics/Powershell -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
           if ($results) {
             $results | Format-Table -AutoSize
             throw "PSScriptAnalyzer reported $($results.Count) issue(s)."
