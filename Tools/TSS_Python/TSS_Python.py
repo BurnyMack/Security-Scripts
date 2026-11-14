@@ -1,115 +1,146 @@
+#!/usr/bin/env python3
 """
-Helper functions for authenticating to and reading/updating secrets in a
-Thycotic/Delinea Secret Server instance over its REST API.
+Authenticate to and read/update secrets in a Thycotic/Delinea Secret Server
+instance over its REST API.
 
-Library module — import GetToken/GetSecret/UpdateSecret; no CLI.
+Usage:
+    # Credentials come from the environment, never the command line:
+    export TSS_USERNAME=... TSS_PASSWORD=...
+    python TSS_Python.py get --token-url https://ss/oauth2/token \\
+        --server-url https://ss/api/v1/secrets --id 42
+    export TSS_NEW_VALUE='new password'
+    python TSS_Python.py update --token-url ... --server-url ... --id 42
 
 Requirements:
-    requests
+    requests; secscripts (pip install -e .).
 
-Note: the endpoint URL is left as a "<ENDPOINT URL>" placeholder below —
-fill in your Secret Server URL before use.
+Importable as a library (GetToken/GetSecret/UpdateSecret) or run as a CLI.
+Endpoint URLs are supplied by the caller (flags or TSS_TOKEN_URL /
+TSS_SERVER_URL env vars); nothing is hardcoded.
 """
 
-import json
 import os
+import sys
+from pathlib import Path
 
 import requests
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-def GetToken(username, password):
-    token_url = os.getenv("<ENDPOINT URL>")
-    token_headers = {
-        "Accept": "application/json",
-        "content-type": "application/x-www-form-token_urlencoded",
-    }
-    token_payload = {
-        "username": username,
-        "password": password,
-        "grant_type": "password",
-    }
-    auth = requests.post(token_url, data=token_payload, headers=token_headers)
-    if auth.status_code == 200 and "An error has occurred" not in auth.text:
-        authresponse = json.loads(auth.text)
-        token = authresponse["access_token"]
-        return token
-    elif auth.status_code != 200:
-        print(
-            " Error retrieving token",
-            "Status Code: " + str(auth.status_code),
-            "Details: " + str(auth.text),
-            sep="\n",
-        )
-        exit()
-    else:
-        print(
-            " Error retrieveing token: Authentication provided is either incorrect or not supplied, consider reviewing.",
-            "Status Code: " + str(auth.status_code),
-            "Details: " + str(auth.content),
-            sep="\n",
-        )
-        exit()
+from secscripts.cli import EXIT_ERROR, EXIT_OK, build_parser  # noqa: E402
+from secscripts.log import configure  # noqa: E402
+from secscripts.output import emit  # noqa: E402
+
+_SECRET_FIELD_MAP = {
+    "Username": "user",
+    "Password": "pass",
+    "Location": "location",
+    "Notes": "notes",
+    "Directory (tenant) ID": "tenantid",
+    "Application (client) ID": "clientid",
+    "Client Secret": "clientsecret",
+}
 
 
-def GetSecret(token, tokenID):
-    headers = {"Authorization": "Bearer " + token, "content-type": "application/json"}
-    secrequest = requests.get("<ENDPOINT URL>" + str(tokenID), headers=headers)
-    secresponse = json.loads(secrequest.text)
-    if secrequest.status_code == 200:
-        data_dict = {
-            "name": "",
-            "user": "",
-            "pass": "",
-            "location": "",
-            "notes": [],
-            "tenantid": "",
-            "clientid": "",
-            "clientsecret": "",
-        }
-        data_dict["name"] = secresponse["name"]
-        for item in secresponse["items"]:
-            try:
-                if item["fieldName"] == "Username":
-                    data_dict["user"] = item["itemValue"]
-                if item["fieldName"] == "Password":
-                    data_dict["pass"] = item["itemValue"]
-                if item["fieldName"] == "Location":
-                    data_dict["location"] = item["itemValue"]
-                if item["fieldName"] == "Notes":
-                    data_dict["notes"] = item["itemValue"]
-                if item["fieldName"] == "Directory (tenant) ID":
-                    data_dict["tenantid"] = item["itemValue"]
-                if item["fieldName"] == "Application (client) ID":
-                    data_dict["clientid"] = item["itemValue"]
-                if item["fieldName"] == "Client Secret":
-                    data_dict["clientsecret"] = item["itemValue"]
-            except Exception:
-                pass
-        return data_dict
-    else:
-        print(
-            "Error retrieving secret!!!!",
-            "Token ID: " + str(tokenID),
-            "Status Code: " + str(secrequest.status_code),
-            "Response: " + secrequest.text,
-            sep="\n",
-        )
+class TSSError(Exception):
+    """Raised on an authentication or API error (so callers can handle it)."""
 
 
-def UpdateSecret(server_url, token, tokenID, new_secret_value):
-    update_url = f"{server_url}/Secrets/{tokenID}"
+def GetToken(token_url, username, password):
+    """Return an OAuth access token, or raise TSSError."""
     headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "content-type": "application/x-www-form-urlencoded",
     }
-    updated_secret_data = {
-        "SecretId": tokenID,
+    payload = {"username": username, "password": password, "grant_type": "password"}
+    auth = requests.post(token_url, data=payload, headers=headers)
+    if auth.status_code == 200 and "An error has occurred" not in auth.text:
+        try:
+            return auth.json()["access_token"]
+        except (ValueError, KeyError) as exc:
+            raise TSSError(f"token response missing access_token: {exc}") from exc
+    raise TSSError(f"error retrieving token (status {auth.status_code})")
+
+
+def GetSecret(server_url, token, secret_id):
+    """Fetch a secret by id and return a normalised dict, or raise TSSError."""
+    headers = {"Authorization": f"Bearer {token}", "content-type": "application/json"}
+    url = f"{server_url.rstrip('/')}/{secret_id}"
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise TSSError(f"error retrieving secret {secret_id} (status {response.status_code})")
+    body = response.json()
+    data = {"name": body.get("name", "")}
+    data.update(dict.fromkeys(_SECRET_FIELD_MAP.values(), ""))
+    for item in body.get("items", []):
+        key = _SECRET_FIELD_MAP.get(item.get("fieldName"))
+        if key is not None:
+            data[key] = item.get("itemValue", "")
+    return data
+
+
+def UpdateSecret(server_url, token, secret_id, new_secret_value):
+    """Set a secret's Password field. Return True, or raise TSSError."""
+    url = f"{server_url.rstrip('/')}/{secret_id}"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    payload = {
+        "SecretId": secret_id,
         "Items": [{"FieldName": "Password", "Value": new_secret_value}],
     }
-    updated_secret_json = json.dumps(updated_secret_data)
-    response = requests.put(update_url, headers=headers, data=updated_secret_json)
+    response = requests.put(url, headers=headers, json=payload)
     if response.status_code == 200:
-        print("Secret updated successfully")
-    else:
-        print(f"Failed to update secret. Status code: {response.status_code}")
-        print(response.text)
+        return True
+    raise TSSError(f"failed to update secret {secret_id} (status {response.status_code})")
+
+
+def _require(value, name, logger):
+    if not value:
+        logger.error("%s is required (set it or pass the matching flag)", name)
+        raise TSSError(name)
+    return value
+
+
+def main(argv=None):
+    parser = build_parser(
+        "Read or update secrets in a Thycotic/Delinea Secret Server.",
+        prog="TSS_Python",
+    )
+    parser.add_argument(
+        "action", choices=["get", "update"], help="get a secret or update its password"
+    )
+    parser.add_argument("--id", required=True, help="secret id")
+    parser.add_argument(
+        "--token-url", default=os.getenv("TSS_TOKEN_URL"), help="OAuth token endpoint"
+    )
+    parser.add_argument(
+        "--server-url", default=os.getenv("TSS_SERVER_URL"), help="secrets API base URL"
+    )
+    args = parser.parse_args(argv)
+    logger = configure(args, name="TSS_Python")
+
+    try:
+        token_url = _require(args.token_url, "--token-url/TSS_TOKEN_URL", logger)
+        server_url = _require(args.server_url, "--server-url/TSS_SERVER_URL", logger)
+        username = _require(os.getenv("TSS_USERNAME"), "TSS_USERNAME", logger)
+        password = _require(os.getenv("TSS_PASSWORD"), "TSS_PASSWORD", logger)
+
+        token = GetToken(token_url, username, password)
+        if args.action == "get":
+            emit([GetSecret(server_url, token, args.id)], args.output_format)
+        else:
+            new_value = _require(os.getenv("TSS_NEW_VALUE"), "TSS_NEW_VALUE", logger)
+            UpdateSecret(server_url, token, args.id, new_value)
+            logger.info("secret %s updated", args.id)
+    except TSSError as exc:
+        logger.error("%s", exc)
+        return EXIT_ERROR
+    except requests.RequestException as exc:
+        logger.error("request failed: %s", exc)
+        return EXIT_ERROR
+
+    return EXIT_OK
+
+
+if __name__ == "__main__":
+    sys.exit(main())
