@@ -1,0 +1,28 @@
+services:
+  velociraptor:
+    # Digest-pinned community Velociraptor server image (no floating tag).
+    image: wlambert/velociraptor@sha256:dfeebaeec637fdcda9161b3729ce5233ccfbca1e0d57602cd768bc01d6800308
+    container_name: velociraptor
+    environment:
+      # Review/override these for your deployment (see README).
+      VELOX_USER: ${VELOX_USER:-admin}
+      VELOX_PASSWORD: ${VELOX_PASSWORD:-admin}
+      VELOX_ROLE: administrator
+      VELOX_SERVER_URL: https://0.0.0.0:8000/
+      VELOX_FRONTEND_HOSTNAME: 0.0.0.0
+    ports:
+      - "8889:8889"   # GUI
+      - "8000:8000"   # frontend (agent comms)
+    volumes:
+      - velociraptor-data:/velociraptor
+    restart: unless-stopped
+    healthcheck:
+      # GUI listening is the liveness signal (self-signed TLS, so -k).
+      test: ["CMD-SHELL", "curl -skf https://localhost:8889/ >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  velociraptor-data:
