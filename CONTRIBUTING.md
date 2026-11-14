@@ -127,5 +127,5 @@ Conventions for directly-run Python tools:
   the same style rules as any other Python script. Per the repo's README
   disclaimer they're defensive-research/educational code — consistency edits
   must not make them more evasive or capable than they already are.
-- After changing Python imports/dependencies, regenerate `requirements.txt`
-  with `python Automations/update_dependencies.py`.
+- After changing Python imports/dependencies, update `requirements.txt` by hand
+  — add the new package with a pinned version.

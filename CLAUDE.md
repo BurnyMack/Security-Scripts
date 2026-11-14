@@ -15,7 +15,7 @@ python <path/to/script.py> [args]
 
 There is one repo-wide `requirements.txt` (cryptography, docx, dpkt_fix, Faker, pandas, pipreqs, pynput, pytsk3, Requests, scapy, volatility) — no per-folder requirements files, no virtualenv convention enforced, and no test suite, linter, or CI beyond the issue/PR templates in `.github/`. Verify changes by running the affected script directly with `-h`/sample input rather than expecting automated checks.
 
-To regenerate `requirements.txt` from actual imports: `python Automations/update_dependencies.py` (wraps `pipreqs --force`).
+Maintain `requirements.txt` by hand when imports change — add the new package with a pinned version. (An older `pipreqs --force` wrapper was removed because it dropped non-imported runtime deps and could not reproduce the git-based volatility pin.)
 
 Bash forensic scripts (`Forensics/Bash/*.sh`) and PowerShell scripts (`Forensics/Powershell/*.ps1`) are meant to be run directly on the OS they target (Linux/macOS vs Windows) — read the script header before running since several (e.g. `evidence_collector.sh`, `collectEvidence.ps1`) expect to be run with elevated privileges on a live or mounted target system.
 
@@ -31,7 +31,6 @@ Bash forensic scripts (`Forensics/Bash/*.sh`) and PowerShell scripts (`Forensics
 - **Tools/** — standalone analyzers/crackers, each a small class + `argparse` CLI: `HashCrack` (crypt-hash brute force against a wordlist), `ZipCrack` (zip password brute force), `XLanalyser` (CSV/XLSX inspection), `TSS_Python`.
 - **LogParse/** — log-parsing CLI. `CLIParse.py` is the entry point (`python LogParse/CLIParse.py <format> -p <path> [-o <output_dir>]`); `LogParser` auto-detects format (apache/iis/syslog/cef/yara) via regex against `log_patterns` and writes parsed output to `<format>_parsed_data.xlsx`. Only the `apache` format has a working parse method (`Apache()`) — other formats will fail at `getattr(self, log_format.capitalize())` until implemented.
 - **Malware/** — intentionally offensive-style samples (`arpspoof.py`, `keylogger.py`, `ransomware.py`). Per the repo's README disclaimer, these exist to test security control boundaries and are for research/testing only — treat as defensive-research/educational code, not material to weaponize or make more evasive.
-- **Automations/** — repo maintenance scripts (currently just `update_dependencies.py`).
 - **specs/** — feature specs created via the `spec` skill (`~/.claude/skills/spec/`); each spec follows `specs/TEMPLATE.md` (Executive Summary / User Stories / Technical Requirements / Acceptance Criteria) and is paired with a `claude/feature/<slug>` branch. Implementation planning, checkpointed execution, and final review/merge are handled by the companion `spec-plan` / `spec-execute` / `spec-review` skills (also user-level, in `~/.claude/skills/`). `specs/plans/*.local.md` holds the approved implementation plan per feature — these are git-ignored and must never be committed. The legacy `.claude/commands/spec-v1.md` command is superseded by the `spec` skill and now just points to it.
 
 ## Working conventions
