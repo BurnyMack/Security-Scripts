@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 """
-Generates a CSV of synthetic fake user records for building test evidence sets.
+Generate a CSV of synthetic fake user records for building test evidence sets.
 
 Usage:
     generate_data.py
     generate_data.py --output fake_user_data.csv --min-users 50000 --max-users 99000
 
 Requirements:
-    Faker (pip install Faker)
+    Faker (pip install Faker); secscripts (pip install -e .).
 """
 
-import argparse
 import csv
 import random
+import sys
+from pathlib import Path
 
 from faker import Faker
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
+from secscripts.cli import EXIT_OK, build_parser  # noqa: E402
+from secscripts.log import configure  # noqa: E402
 
 fake = Faker()
 
@@ -33,16 +40,20 @@ def generate_users(num_users):
     return user_data
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate synthetic fake user records as a CSV.")
-    parser.add_argument("-o", "--output", default="fake_user_data.csv", help="Output CSV filename")
+def main(argv=None):
+    parser = build_parser(
+        "Generate synthetic fake user records as a CSV.",
+        prog="generate_data",
+    )
+    parser.add_argument("-o", "--output", default="fake_user_data.csv", help="output CSV filename")
     parser.add_argument(
-        "--min-users", type=int, default=50000, help="Minimum number of records to generate"
+        "--min-users", type=int, default=50000, help="minimum number of records to generate"
     )
     parser.add_argument(
-        "--max-users", type=int, default=99000, help="Maximum number of records to generate"
+        "--max-users", type=int, default=99000, help="maximum number of records to generate"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    logger = configure(args, name="generate_data")
 
     num_users = random.randint(args.min_users, args.max_users)
     user_data = generate_users(num_users)
@@ -54,8 +65,9 @@ def main():
         )
         csv_writer.writerows(user_data)
 
-    print(f"Generated {num_users} fake user records in '{args.output}'")
+    logger.info("generated %d fake user records in '%s'", num_users, args.output)
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,45 +1,78 @@
 #!/usr/bin/env python3
 """
-Generates a synthetic Apache-style access log with embedded fake IOCs, for
-building test evidence sets. Requires user_agents.txt, referrers.txt, and
-page_names.txt in the working directory. See README.md in this directory for
-the full generate -> filter -> rename workflow.
+Generate a synthetic Apache-style access log with embedded fake IOCs, for
+building test evidence sets. Needs user_agents.txt, referrers.txt, and
+page_names.txt (one entry per line). See README.md in this directory for the
+full generate -> filter -> rename workflow.
 
 Usage:
     webgen.py
+    webgen.py -o out.log --min-entries 1000 --max-entries 2000
 
 Requirements:
-    stdlib only
+    secscripts (pip install -e .).
 """
 
 import random
 import socket
 import struct
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
+from secscripts.cli import EXIT_ERROR, EXIT_OK, build_parser  # noqa: E402
+from secscripts.log import configure  # noqa: E402
 
 
-def main():
-    # Configuration
-    output_file = "fake_access_log_updated.txt"
-    user_agent_file = "user_agents.txt"
-    referrer_file = "referrers.txt"
-    page_names_file = "page_names.txt"
-    start_time = datetime(2023, 12, 1, 18, 48)
-    end_time = datetime(2023, 12, 3, 19, 33)
-    num_entries = random.randint(3000000, 6000000)
+def _parse_dt(value):
+    return datetime.strptime(value, "%Y-%m-%d %H:%M")
+
+
+def main(argv=None):
+    parser = build_parser(
+        "Generate a synthetic Apache access log with embedded fake IOCs.",
+        prog="webgen",
+    )
+    parser.add_argument("-o", "--output", default="fake_access_log_updated.txt")
+    parser.add_argument("--user-agents", default="user_agents.txt")
+    parser.add_argument("--referrers", default="referrers.txt")
+    parser.add_argument("--page-names", default="page_names.txt")
+    parser.add_argument("--start", default="2023-12-01 18:48", help="start time 'YYYY-MM-DD HH:MM'")
+    parser.add_argument("--end", default="2023-12-03 19:33", help="end time 'YYYY-MM-DD HH:MM'")
+    parser.add_argument("--min-entries", type=int, default=3000000)
+    parser.add_argument("--max-entries", type=int, default=6000000)
+    args = parser.parse_args(argv)
+    logger = configure(args, name="webgen")
+
+    output_file = args.output
+    user_agent_file = args.user_agents
+    referrer_file = args.referrers
+    page_names_file = args.page_names
+    try:
+        start_time = _parse_dt(args.start)
+        end_time = _parse_dt(args.end)
+    except ValueError as exc:
+        logger.error("bad --start/--end (expected 'YYYY-MM-DD HH:MM'): %s", exc)
+        return EXIT_ERROR
+    num_entries = random.randint(args.min_entries, args.max_entries)
 
     # Calculate time interval
     time_interval = (end_time - start_time) / num_entries
 
     # Load data from files
-    with open(user_agent_file) as ua_file:
-        user_agents = [line.strip() for line in ua_file]
-
-    with open(referrer_file) as ref_file:
-        referrers = [line.strip() for line in ref_file]
-
-    with open(page_names_file) as page_file:
-        page_names = [line.strip() for line in page_file]
+    try:
+        with open(user_agent_file) as ua_file:
+            user_agents = [line.strip() for line in ua_file]
+        with open(referrer_file) as ref_file:
+            referrers = [line.strip() for line in ref_file]
+        with open(page_names_file) as page_file:
+            page_names = [line.strip() for line in page_file]
+    except OSError as exc:
+        logger.error("could not read an input list file: %s", exc)
+        return EXIT_ERROR
 
     # Open the output log file
     with open(output_file, "w") as log_file:
@@ -160,8 +193,9 @@ def main():
             if i == num_entries - 1:
                 break
 
-    print(f"Generated {num_entries} log entries in '{output_file}'")
+    logger.info("generated %d log entries in '%s'", num_entries, output_file)
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
