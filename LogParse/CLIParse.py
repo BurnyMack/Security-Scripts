@@ -1,111 +1,120 @@
 #!/usr/bin/env python3
 """
-CLI entry point for LogParse. Detects a log's format and parses it to an
-Excel file.
+CLI entry point for LogParse: parse a log file to json, csv, text, or xlsx.
 
 Usage:
-    python LogParse/CLIParse.py apache -p /path/to/access.log -o out_dir/
+    python LogParse/CLIParse.py -p access.log                     # auto-detect, json to stdout
+    python LogParse/CLIParse.py -p access.log --format apache --output-format csv
+    python LogParse/CLIParse.py -p rules.yar --output-format xlsx -o out/
 
 Requirements:
-    pandas, xlsxwriter
+    secscripts (pip install -e .); pandas + XlsxWriter for --output-format xlsx.
 
-Note: only the "apache" format has a working parse method on the LogParser
-class below — "iis"/"syslog"/"cef"/"pcap"/"yara" are accepted by the CLI but
-will raise AttributeError, since LogParser.parse() looks up a same-named
-method that isn't implemented here yet. A separate, more complete set of
-parsers already exists in LogParse/LogParse.py but isn't wired into this CLI.
+Supported formats: apache, iis, syslog, cef, yara (and pcap, via dpkt). When
+--format is omitted the format is auto-detected; detection fails loudly on an
+unrecognised or ambiguous file rather than guessing.
 """
 
-import argparse
-import re
+import sys
+from pathlib import Path
 
-import pandas as pd
+# Allow running directly as `python LogParse/CLIParse.py` (repo root not on the
+# path) as well as `python -m LogParse.CLIParse`.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from LogParse.LogParse import LogParse  # noqa: E402
+from secscripts.cli import EXIT_ERROR, EXIT_OK, build_parser  # noqa: E402
+from secscripts.log import configure  # noqa: E402
+from secscripts.output import emit, render  # noqa: E402
 
-class LogParser:
-    def __init__(self, data):
-        self.data = data
-        self.log_patterns = {
-            "apache": r'(?P<ip>\S+) - - \[(?P<timestamp>.*?)\] "(?P<request>.*?)" (?P<status>\d+) (?P<size>\d+)',
-            "iis": r'^(\S+) (\S+) (\S+) \[([\w:/]+\s[+\-]\d{4})\] "(\S+) (\S+) (\S+)" (\d+) (\d+) "([^"]*)" "([^"]*)"',
-            "syslog": r"(\S+ \d+ \d+:\d+:\d+) (\S+) (\S+)\[([\d]+)\]: (.*)",
-            "cef": r"CEF:(\d+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(\d+)\|(.+)",
-            "yara": r"rule\s+(\w+)\s+{([\s\S]*?)}",
-        }
-
-    def detect_log_format(self):
-        for log_format, log_pattern in self.log_patterns.items():
-            log_regex = re.compile(log_pattern)
-            with open(self.data) as log_file:
-                for line in log_file:
-                    if log_regex.search(line):
-                        return log_format
-        return None
-
-    def Apache(self):
-        log_pattern = self.log_patterns["apache"]
-        log_regex = re.compile(log_pattern)
-        results = []
-        with open(self.data) as log_file:
-            for line in log_file:
-                match = log_regex.search(line)
-                if match:
-                    ip = match.group("ip")
-                    timestamp = match.group("timestamp")
-                    request = match.group("request")
-                    status = match.group("status")
-                    size = match.group("size")
-                    results.append(
-                        {
-                            "IP": ip,
-                            "timestamp": timestamp,
-                            "URL": request,
-                            "Status Code": status,
-                            "Bytes Sent": size,
-                        }
-                    )
-
-        return results
-
-    def parse(self):
-        log_format = self.detect_log_format()
-        if log_format is None:
-            print("Unsupported log format.")
-            return
-
-        parse_method = getattr(self, log_format.capitalize())
-        parsed_data = parse_method()
-
-        if parsed_data:
-            self.save_to_excel(parsed_data, log_format)
-            print(f"Data parsed and saved to {log_format}_parsed_data.xlsx")
-
-    # Parsing methods for different log formats here...
-
-    def save_to_excel(self, data, log_format):
-        df = pd.DataFrame(data)
-        output_file = f"{log_format}_parsed_data.xlsx"
-        df.to_excel(output_file, sheet_name="Parsed Data", index=False)
+_FORMAT_CHOICES = ["apache", "iis", "syslog", "cef", "pcap", "yara"]
+_EXTENSION = {"json": "json", "csv": "csv", "text": "txt"}
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Log Parser CLI Tool")
-    parser.add_argument(
-        "log_format",
-        choices=["apache", "iis", "syslog", "cef", "pcap", "yara"],
-        help="Log format to parse (e.g., 'apache', 'iis', 'syslog', 'cef', 'pcap', 'yara')",
+def _write_stdout_format(records, output_format, output_dir, log_format, logger):
+    """Render json/csv/text either to stdout or, if -o was given, to a file."""
+    if output_dir is None:
+        emit(records, output_format)
+        return
+    output_dir.mkdir(parents=True, exist_ok=True)
+    ext = _EXTENSION[output_format]
+    out_path = output_dir / f"{log_format}_parsed_data.{ext}"
+    out_path.write_text(render(records, output_format) + "\n", encoding="utf-8")
+    logger.info("Wrote %d records to %s", len(records), out_path)
+
+
+def _write_xlsx(records, output_dir, log_format, logger):
+    try:
+        import pandas as pd
+    except ImportError:
+        logger.error("xlsx output needs pandas + XlsxWriter (pip install -e . then pandas)")
+        raise
+    target_dir = output_dir if output_dir is not None else Path.cwd()
+    target_dir.mkdir(parents=True, exist_ok=True)
+    out_path = target_dir / f"{log_format}_parsed_data.xlsx"
+    pd.DataFrame(records).to_excel(out_path, sheet_name="Parsed Data", index=False)
+    logger.info("Wrote %d records to %s", len(records), out_path)
+
+
+def main(argv=None):
+    parser = build_parser(
+        "Parse a log file to json, csv, text, or xlsx.",
+        prog="CLIParse",
+        output_formats=("json", "csv", "text", "xlsx"),
+        default_format="json",
     )
-    parser.add_argument("-p", "--path", required=True, help="Path to the log file to parse")
+    parser.add_argument("-p", "--path", required=True, help="path to the log file to parse")
+    parser.add_argument(
+        "--format",
+        choices=_FORMAT_CHOICES,
+        help="log format (default: auto-detect)",
+    )
     parser.add_argument(
         "-o",
         "--output",
-        help="Path to the output directory (default: current working directory). "
-        "Not currently used — output always writes to the current directory.",
+        help="output directory; for json/csv/text, omit to print to stdout "
+        "(xlsx always writes a file)",
     )
-    args = parser.parse_args()
-    log_parser = LogParser(args.path)
-    log_parser.parse()
+    args = parser.parse_args(argv)
+    logger = configure(args, name="CLIParse")
+
+    path = Path(args.path)
+    if not path.is_file():
+        logger.error("no such file: %s", path)
+        return EXIT_ERROR
+
+    output_dir = Path(args.output) if args.output else None
+    parser_obj = LogParse(str(path))
+
+    try:
+        log_format = args.format or parser_obj.detect()
+        if not args.format:
+            logger.info("auto-detected format: %s", log_format)
+        records = parser_obj.parse(log_format)
+    except ValueError as exc:
+        logger.error("%s", exc)
+        return EXIT_ERROR
+    except OSError as exc:
+        logger.error("could not read %s: %s", path, exc)
+        return EXIT_ERROR
+
+    if not records:
+        logger.warning("no %s records matched in %s", log_format, path)
+
+    try:
+        if args.output_format == "xlsx":
+            _write_xlsx(records, output_dir, log_format, logger)
+        else:
+            _write_stdout_format(records, args.output_format, output_dir, log_format, logger)
+    except ImportError:
+        return EXIT_ERROR
+    except OSError as exc:
+        logger.error("could not write output: %s", exc)
+        return EXIT_ERROR
+
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,0 +1,92 @@
+services:
+  misp-core:
+    # Digest-pinned MISP core (official misp-docker image).
+    image: ghcr.io/misp/misp-docker/misp-core:latest@sha256:895a10b55c3a255e6c968b9951e7d0775365016f4222682559a6ba8ba91cc52c
+    container_name: misp-core
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8083:80"
+      - "8443:443"
+    environment:
+      BASE_URL: ${MISP_BASE_URL:-https://localhost:8443}
+      MYSQL_HOST: db
+      MYSQL_USER: ${MYSQL_USER:-misp}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      MYSQL_DATABASE: misp
+      REDIS_FQDN: redis
+    volumes:
+      - misp-config:/var/www/MISP/app/Config
+      - misp-files:/var/www/MISP/app/files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -skf https://localhost/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 8
+      start_period: 120s
+    networks:
+      - mispnet
+
+  misp-modules:
+    image: ghcr.io/misp/misp-docker/misp-modules:latest@sha256:f8cecdfbc0e16a07b4996e69d9fad2936510857817fec0ffe4bfec8c25eb63a4
+    container_name: misp-modules
+    environment:
+      REDIS_BACKEND: redis
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:6666/modules >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+    networks:
+      - mispnet
+
+  db:
+    # MariaDB runs as a non-root user by default.
+    image: mariadb:10.11@sha256:135c49b72e97143b73cc273dcdc95d2b035e3ebfbd536c3d72c65b715a8e06b5
+    container_name: misp-db
+    environment:
+      MYSQL_USER: ${MYSQL_USER:-misp}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      MYSQL_DATABASE: misp
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-too}
+    volumes:
+      - misp-db:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mispnet
+
+  redis:
+    # Valkey (Redis-compatible), runs as a non-root user by default.
+    image: valkey/valkey:7.2@sha256:ccee715a6e42af0c1c048884dcb84843a60c432c982107576d8f12fd5737805b
+    container_name: misp-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    networks:
+      - mispnet
+
+volumes:
+  misp-config:
+  misp-files:
+  misp-db:
+
+networks:
+  mispnet:
+    driver: bridge

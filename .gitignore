@@ -125,6 +125,8 @@ $RECYCLE.BIN/
 # Logs, temp files, backups
 ########################################
 *.log
+# Exception: committed LogParse test fixtures (sample logs used by its tests/CI)
+!LogParse/TestFiles/*.log
 logs/
 *.tmp
 *.bak

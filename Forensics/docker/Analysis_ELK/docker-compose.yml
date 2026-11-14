@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0@sha256:b0effe89b1ac5a73e116ccdc897e807d3546ea06afb93d8873a7c707d3016186
     container_name: elasticsearch
     environment:
       - node.name=elasticsearch
@@ -17,7 +17,7 @@ services:
       - dfirnet
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
+    image: docker.elastic.co/kibana/kibana:8.11.0@sha256:a65f5453c527bccad9d10cc49b48a8d5e838a52324fdd3be3f64a65edb8689a4
     container_name: kibana
     ports:
       - 8889:5601
@@ -38,8 +38,10 @@ services:
       - dfirnet
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:8.11.0
+    image: docker.elastic.co/beats/filebeat:8.11.0@sha256:dc27bb55fb55a5f39cd5fada43c1e567c56bdd5e96457607b978ec9dbd5f4e14
     container_name: filebeat
+    # Runs as root by necessity: it reads host log files and the Docker socket,
+    # which the unprivileged filebeat user cannot access.
     user: root
     volumes:
       - ./filebeat.yml:/usr/share/filebeat/filebeat.yml

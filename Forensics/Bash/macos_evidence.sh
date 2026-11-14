@@ -1,4 +1,8 @@
 #!/bin/zsh
+# shellcheck shell=bash # runs under zsh on macOS but is bash-compatible; lint as bash
+# shellcheck disable=SC2129 # sequential >> writes to the log/evidence files are
+# intentional; grouping them with { } would only reorder independent evidence
+# writes with no benefit, and risks mis-scoping a block in an evidence script.
 #
 # Purpose:
 #   Starter script for capturing triage data from a suspected-compromised

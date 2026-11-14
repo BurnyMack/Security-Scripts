@@ -1,0 +1,25 @@
+services:
+  zeek:
+    # Digest-pinned (no floating tag). Zeek 6.0.
+    image: zeek/zeek:6.0@sha256:e9abe7bf64f905c55137ac6e243e9cd8dfa769d475a4021ccd9793128012c256
+    container_name: zeek
+    # Live capture needs the host's interfaces and raw-socket capability.
+    network_mode: host
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    # Drop every other capability; Zeek only needs the two above to sniff.
+    cap_drop:
+      - ALL
+    command: ["zeek", "-i", "${ZEEK_IFACE:-eth0}", "LogAscii::use_json=T"]
+    working_dir: /logs
+    volumes:
+      - ./logs:/logs
+    restart: unless-stopped
+    healthcheck:
+      # The capture process staying up is the liveness signal.
+      test: ["CMD-SHELL", "pgrep -x zeek >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s

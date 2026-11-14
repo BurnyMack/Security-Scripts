@@ -13,7 +13,7 @@ services:
             - 9999:80
     db:
         container_name: customerdb
-        image: mysql
+        image: mysql:8.0@sha256:62fb722c78b24245ddff1796a0fcee4a49cc5b87e0aaaf20c92d1da9e0a2497b
         restart: always
         environment:
             MYSQL_ROOT_PASSWORD: NINJAROOTPASSWORD
@@ -22,9 +22,14 @@ services:
             MYSQL_PASSWORD: secretmysqlpassword
         ports:
             - "9996:3306"
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
     phpmyadmin:
         container_name: phpmyadmin
-        image: phpmyadmin/phpmyadmin
+        image: phpmyadmin/phpmyadmin:5.2@sha256:16d0f09c25a2dee07739af9dc11e72c1bf7fb776a449f6cc03ec00b33d0c6d9b
         ports:
             - '9090:80'
         restart: always
@@ -32,3 +37,8 @@ services:
             PMA_HOST: db
         depends_on:
             - db
+        healthcheck:
+            test: ["CMD", "curl", "-fsS", "http://localhost:80/"]
+            interval: 15s
+            timeout: 5s
+            retries: 6

@@ -12,7 +12,7 @@
 # EG: docker cp /path/to/malicious/document maldoc:/home/analysis/malware
 # This will copy document to the /home/analysis/malware folder in the container named maldoc.
 
-FROM ubuntu:latest
+FROM ubuntu:24.04@sha256:77eb101c607d6e3d4f5ad0c8a02c2136c689b98aba1f359e6502ba517e5c57ec
 
 LABEL version="0.01"
 LABEL description="Maldoc analysis"

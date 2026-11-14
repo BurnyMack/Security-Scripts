@@ -72,3 +72,20 @@ try {
     Write-Error "KAPE triage step failed: $_"
     Add-Content -Path $LogFile -Value "KAPE triage FAILED: $_"
 }
+
+# Evidence integrity manifest: SHA-256 every collected file (RFC 3227). The
+# per-artefact MD5 files above follow chain-of-custody convention; this adds a
+# single SHA-256 manifest over the whole evidence set.
+Add-Content -Path $LogFile -Value "SHA-256 manifest generation started: $((Get-Date).ToString())"
+try {
+    $ManifestPath = "$EvidenceDir\manifest.sha256.csv"
+    Get-ChildItem -Path $EvidenceDir -Recurse -File |
+        Where-Object { $_.Name -ne 'manifest.sha256.csv' } |
+        Get-FileHash -Algorithm SHA256 |
+        Export-Csv -Path $ManifestPath -NoTypeInformation -ErrorAction Stop
+    Add-Content -Path $LogFile -Value "SHA-256 manifest written to $ManifestPath"
+    Write-Host -ForegroundColor Green "[ ] SHA-256 manifest written to $ManifestPath"
+} catch {
+    Write-Error "SHA-256 manifest step failed: $_"
+    Add-Content -Path $LogFile -Value "SHA-256 manifest FAILED: $_"
+}

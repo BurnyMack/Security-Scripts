@@ -6,9 +6,37 @@ conventions exist to keep every script easy to pick up on its own, not to
 introduce cross-folder abstractions. Match them when adding or editing any
 script, regardless of folder.
 
-Out of scope for these conventions: type hints, a `logging`-module rewrite of
-CLI output, or any new framework/dependency. Scripts here are meant to stay
-dependency-light, one-file, and readable without extra machinery.
+Scripts here stay dependency-light and readable without heavy machinery. The
+one sanctioned shared abstraction is the `secscripts` package (see below) —
+reach for it for the common CLI contract rather than inventing per-script
+variants or pulling in a new framework. Type hints are welcome but not
+required.
+
+## The `secscripts` shared package
+
+`secscripts/` (installed with `pip install -e .` from the repo root) gives
+every directly-run Python tool one consistent CLI contract, so each tool does
+not re-implement the same boilerplate:
+
+- `secscripts.cli` — `build_parser()` / `add_common_args()` add the shared
+  flags: `--version`, `--output-format {json,csv,text}`, and `-q/--quiet` /
+  `-v/--verbose`.
+- `secscripts.output` — `emit()` / `render()` turn a `list[dict]` of results
+  into json, csv, or text on stdout.
+- `secscripts.log` — `configure()` sets up a stderr logger wired to the
+  verbosity flags (data on stdout, logs on stderr, so JSON/CSV pipes cleanly).
+- `secscripts.hashing` — SHA-256 and evidence-manifest helpers for collectors.
+- `secscripts.progress` — a TTY-aware progress bar with ETA.
+
+Conventions for directly-run Python tools:
+
+- Build the CLI through `secscripts.cli` and honour the shared exit-code
+  convention: `0` success, `1` a handled runtime/usage error reported to
+  stderr, `2` argparse's own usage error.
+- Emit structured results through `secscripts.output` so `--output-format`
+  behaves identically everywhere.
+- Volatility plugins are exempt from the CLI contract — they take arguments
+  through Volatility's own config API, not argparse.
 
 ## Python
 
@@ -79,12 +107,15 @@ dependency-light, one-file, and readable without extra machinery.
   `try/catch` and a clear error message — don't let a collection step fail
   silently.
 - **Lint**: [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer)
-  must run clean with the default rule set. Any intentionally-ignored rule
-  needs a `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` with a
-  reason.
+  must run clean using the repo settings file `PSScriptAnalyzerSettings.psd1`,
+  which runs the default rules except two intentional, documented exclusions
+  (`PSAvoidUsingWriteHost` — colored interactive console output is deliberate;
+  `PSAvoidUsingBrokenHashAlgorithms` — MD5 is used for chain-of-custody, with a
+  SHA-256 manifest alongside). Any further intentionally-ignored rule needs a
+  `[Diagnostics.CodeAnalysis.SuppressMessageAttribute(...)]` with a reason.
   ```
   Install-Module -Name PSScriptAnalyzer -Scope CurrentUser
-  Invoke-ScriptAnalyzer -Path Forensics/Powershell -Recurse
+  Invoke-ScriptAnalyzer -Path Forensics/Powershell -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
   ```
 
 ## General

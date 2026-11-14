@@ -1,4 +1,7 @@
 #!/bin/bash
+# shellcheck disable=SC2129 # sequential >> writes to the triage log are
+# intentional; grouping them would only reorder independent writes with no
+# benefit in this collection script.
 #
 # Purpose:
 #   A template to help people build Linux triage evidence collection

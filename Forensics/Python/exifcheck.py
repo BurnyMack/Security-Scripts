@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
 """
-This script extracts some key exif data from a docx file.
-It is not a replacement for exiftool or similar, but it can be used to make exifdata available for other tools.
+Extract key document metadata (core properties) from a .docx file.
+Not a replacement for exiftool, but it makes the metadata available to other
+tools in json/csv/text form.
 
 Usage:
     exifcheck.py -i report.docx
+    exifcheck.py -i report.docx --output-format json
 
 Requirements:
-    python-docx (pip install python-docx)
+    python-docx (pip install python-docx); secscripts (pip install -e .).
 """
 
-import argparse
 import sys
+from pathlib import Path
 
 import docx
 from docx.opc.exceptions import PackageNotFoundError
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
+from secscripts.cli import EXIT_ERROR, EXIT_OK, build_parser  # noqa: E402
+from secscripts.log import configure  # noqa: E402
+from secscripts.output import emit  # noqa: E402
 
 
 def meta(doc):
@@ -35,25 +44,26 @@ def meta(doc):
     return metadata
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Extract key exif data from a docx file.")
-    parser.add_argument("-i", "--input", required=True, help="Path to the .docx file to inspect")
-    args = parser.parse_args()
+def main(argv=None):
+    parser = build_parser(
+        "Extract core-property metadata from a .docx file.",
+        prog="exifcheck",
+    )
+    parser.add_argument("-i", "--input", required=True, help="path to the .docx file to inspect")
+    args = parser.parse_args(argv)
+    logger = configure(args, name="exifcheck")
 
     try:
         doc = docx.Document(args.input)
     except (OSError, PackageNotFoundError) as e:
-        print(f"Error opening {args.input}: {e}", file=sys.stderr)
-        sys.exit(1)
+        logger.error("error opening %s: %s", args.input, e)
+        return EXIT_ERROR
 
-    print("Opening : " + args.input)
-    metadata_dict = meta(doc)
-    print("Author: " + str(metadata_dict["author"]))
-    print("Created: " + str(metadata_dict["created"]))
-    print("Modified: " + str(metadata_dict["modified"]))
-    print("Title: " + str(metadata_dict["title"]))
-    print("Language: " + str(metadata_dict["language"]))
+    logger.info("inspecting %s", args.input)
+    metadata = {k: (None if v is None else str(v)) for k, v in meta(doc).items()}
+    emit([metadata], args.output_format)
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

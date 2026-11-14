@@ -1,0 +1,58 @@
+services:
+  opensearch:
+    # Reuse the same digest-pinned OpenSearch as the analysis stack; Arkime
+    # stores its session index here.
+    image: opensearchproject/opensearch:2.11.0@sha256:925060a17ef0374f2b3d94d0f8fb35dffb491701cd4a72fb12a9ca2fed9929d4
+    container_name: arkime-opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - plugins.security.disabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - arkime-os-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 10s
+      retries: 8
+    networks:
+      - arkimenet
+
+  arkime:
+    # Digest-pinned Arkime image (no floating tag).
+    image: ghcr.io/arkime/arkime/arkime@sha256:699271853bdb6bb10fde2b3b3385f261453f8df27575b368a7df70d37e18e67a
+    container_name: arkime
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    environment:
+      # Arkime reads ARKIME_-prefixed vars into config.ini; point it at the
+      # OpenSearch backend above. Review the image docs for the full set.
+      ARKIME_elasticsearch: "http://opensearch:9200"
+    ports:
+      - "8005:8005"   # Arkime viewer
+    volumes:
+      - arkime-pcap:/opt/arkime/raw
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8005/ >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+    networks:
+      - arkimenet
+
+volumes:
+  arkime-os-data:
+  arkime-pcap:
+
+networks:
+  arkimenet:
+    driver: bridge

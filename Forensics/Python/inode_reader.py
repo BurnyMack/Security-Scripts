@@ -1,60 +1,68 @@
 #!/usr/bin/env python3
 """
-Reads a specific inode's data block from an ext4 disk image.
+Read a specific inode's data block from an ext4 disk image and report it with
+a SHA-256 of the extracted bytes.
 
 Usage:
     inode_reader.py disk.img 12345
+    inode_reader.py disk.img 12345 --output-format json
 
 Requirements:
-    pytsk3 (pip install pytsk3)
+    pytsk3 (pip install pytsk3); secscripts (pip install -e .).
 """
 
-import argparse
+import hashlib
 import sys
+from pathlib import Path
 
-import pytsk3
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
+from secscripts.cli import EXIT_ERROR, EXIT_OK, build_parser  # noqa: E402
+from secscripts.log import configure  # noqa: E402
+from secscripts.output import emit  # noqa: E402
 
 
 def extract_block(image, inode):
-    # Open the disk image
-    try:
-        img = pytsk3.Img_Info(image)
-    except OSError as e:
-        print(f"Error opening image: {e}", file=sys.stderr)
-        sys.exit(1)
+    """Return the raw bytes of ``inode`` in the ext4 image, or raise OSError."""
+    import pytsk3  # imported lazily so the module loads without pytsk3
 
-    # Open the filesystem on the image
-    try:
-        fs = pytsk3.FS_Info(img)
-    except OSError as e:
-        print(f"Error opening filesystem: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    # Get the inode structure
-    try:
-        inode_obj = fs.open_meta(inode)
-    except OSError as e:
-        print(f"Error opening inode: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    # Extract the data block
-    block = inode_obj.read_random(0, inode_obj.info.meta.size)
-
-    # Return the data block
-    return block
+    img = pytsk3.Img_Info(image)
+    fs = pytsk3.FS_Info(img)
+    inode_obj = fs.open_meta(inode)
+    return inode_obj.read_random(0, inode_obj.info.meta.size)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Read a specific inode's data block from a disk image."
+def main(argv=None):
+    parser = build_parser(
+        "Read an inode's data block from an ext4 disk image.",
+        prog="inode_reader",
     )
-    parser.add_argument("image", help="Path to the disk image")
-    parser.add_argument("inode", type=int, help="Inode number to read")
-    args = parser.parse_args()
+    parser.add_argument("image", help="path to the disk image")
+    parser.add_argument("inode", type=int, help="inode number to read")
+    parser.add_argument(
+        "--hex", action="store_true", help="include the block bytes (hex) in the output"
+    )
+    args = parser.parse_args(argv)
+    logger = configure(args, name="inode_reader")
 
-    block = extract_block(args.image, args.inode)
-    print(block)
+    try:
+        block = extract_block(args.image, args.inode)
+    except OSError as e:
+        logger.error("error reading inode %s from %s: %s", args.inode, args.image, e)
+        return EXIT_ERROR
+
+    record = {
+        "image": args.image,
+        "inode": args.inode,
+        "size": len(block),
+        "sha256": hashlib.sha256(block).hexdigest(),
+    }
+    if args.hex:
+        record["data_hex"] = block.hex()
+    emit([record], args.output_format)
+    return EXIT_OK
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
