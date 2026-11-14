@@ -1,4 +1,8 @@
 #!/bin/bash
+# shellcheck disable=SC2129 # sequential >> writes to the log are intentional in
+# this carving script; grouping them would only reorder independent writes.
+# shellcheck disable=SC2013 # the for-loops iterate a single cut() column of
+# short partition tokens, so word-splitting is intended and safe here.
 #
 # Purpose:
 #   Carves NTFS data out of VMDK images: converts the VMDK to raw, analyses
