@@ -1,7 +1,7 @@
 version: '3'
 services:
   opensearch-node1:
-    image: opensearchproject/opensearch:2.11.0
+    image: opensearchproject/opensearch:2.11.0@sha256:925060a17ef0374f2b3d94d0f8fb35dffb491701cd4a72fb12a9ca2fed9929d4
     container_name: opensearch-node1
     environment:
       - cluster.name=opensearch-cluster
@@ -37,7 +37,7 @@ services:
       - opensearch-net
 
   opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:2.11.0
+    image: opensearchproject/opensearch-dashboards:2.11.0@sha256:dc0fa1abae8fb60552bc22b61cf3b36fe1f3f1116763ed546b72f0867a42f075
     container_name: opensearch-dashboards
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5601"]
@@ -59,8 +59,10 @@ services:
       - opensearch-net
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:8.11.0
+    image: docker.elastic.co/beats/filebeat:8.11.0@sha256:dc27bb55fb55a5f39cd5fada43c1e567c56bdd5e96457607b978ec9dbd5f4e14
     container_name: filebeat
+    # Runs as root by necessity: it reads host log files the unprivileged
+    # filebeat user cannot access.
     user: root
     volumes:
       - /cases/logstore:/usr/share/filebeat/logs:ro

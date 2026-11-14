@@ -4,7 +4,7 @@
 # Use
 # docker run example/nmaptest:1.0 nmap 192.168.1.1
 
-FROM alpine:latest
+FROM alpine:3.20@sha256:c64c687cbea9300178b30c95835354e34c4e4febc4badfe27102879de0483b5e
 RUN apk update && apk add nmap
 
 CMD [ "nmap","-h" ]
