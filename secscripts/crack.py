@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections import deque
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from itertools import islice
@@ -30,14 +31,6 @@ class CrackResult:
     found: bool
     password: str | None
     tried: int
-
-
-def _chunks(iterator: Iterator[str], size: int) -> Iterator[list[str]]:
-    while True:
-        batch = list(islice(iterator, size))
-        if not batch:
-            return
-        yield batch
 
 
 def _read_resume(path: str | None) -> int:
@@ -64,19 +57,27 @@ def _clear_resume(path: str | None) -> None:
         os.remove(path)
 
 
-def _run_chunk(matcher: Matcher, chunk: list[str], pool) -> str | None:
-    """Return the first matching candidate in a chunk, or None."""
-    if pool is None:
-        for candidate in chunk:
-            if matcher(candidate):
-                return candidate
-        return None
-    # Map preserves order, so the first True corresponds to the first match in
-    # candidate order within the chunk.
-    for candidate, hit in zip(chunk, pool.map(matcher, chunk), strict=True):
-        if hit:
-            return candidate
-    return None
+def _search_serial(
+    candidates: Iterator[str],
+    matcher: Matcher,
+    *,
+    tried: int,
+    bar: Progress,
+    resume_path: str | None,
+    checkpoint_every: int,
+) -> CrackResult:
+    for candidate in candidates:
+        tried += 1
+        bar.update(1)
+        if matcher(candidate):
+            bar.close()
+            _clear_resume(resume_path)
+            return CrackResult(found=True, password=candidate, tried=tried)
+        if resume_path and tried % checkpoint_every == 0:
+            _write_resume(resume_path, tried)
+    bar.close()
+    _clear_resume(resume_path)
+    return CrackResult(found=False, password=None, tried=tried)
 
 
 def search(
@@ -85,16 +86,21 @@ def search(
     *,
     total: int | None = None,
     workers: int | None = None,
-    chunk_size: int = 2000,
+    chunksize: int = 128,
+    checkpoint_every: int = 5000,
     resume_path: str | None = None,
     progress: bool | None = None,
 ) -> CrackResult:
     """Search ``candidates`` for one that satisfies ``matcher``.
 
     ``workers`` defaults to ``os.cpu_count()``; pass ``1`` to run in-process
-    (no pool). ``resume_path`` enables check-pointing: the already-tried count
-    is skipped on start and updated after each exhausted chunk; it is cleared
-    on success or clean exhaustion.
+    (no pool). Parallel work is streamed through ``pool.imap`` with ``chunksize``
+    candidates per task, which keeps every worker fed (far less IPC overhead
+    than a barrier per batch) while preserving candidate order, so the first
+    match is deterministic and resume is exact. ``resume_path`` enables
+    check-pointing: the already-tried count is skipped on start and rewritten
+    every ``checkpoint_every`` candidates; it is cleared on success or clean
+    exhaustion.
     """
     if workers is None:
         workers = os.cpu_count() or 1
@@ -105,35 +111,47 @@ def search(
         for _ in islice(candidates, already):
             pass
     remaining_total = None if total is None else max(total - already, 0)
+    tried = already
+    bar = Progress(total=remaining_total, enabled=progress)
 
-    pool = None
-    created_pool = False
+    if workers <= 1:
+        return _search_serial(
+            candidates,
+            matcher,
+            tried=tried,
+            bar=bar,
+            resume_path=resume_path,
+            checkpoint_every=checkpoint_every,
+        )
+
+    import multiprocessing
+
+    # Record each candidate as imap pulls it from the source, so a True result
+    # at position i maps back to the i-th candidate. The deque holds only the
+    # in-flight window, not the whole keyspace.
+    pending: deque[str] = deque()
+
+    def recording_iter() -> Iterator[str]:
+        for candidate in candidates:
+            pending.append(candidate)
+            yield candidate
+
+    pool = multiprocessing.Pool(processes=workers)
     try:
-        if workers > 1:
-            import multiprocessing
-
-            pool = multiprocessing.Pool(processes=workers)
-            created_pool = True
-
-        tried = already
-        bar = Progress(total=remaining_total, enabled=progress)
-        for chunk in _chunks(candidates, chunk_size):
-            match = _run_chunk(matcher, chunk, pool)
-            if match is not None:
-                # Count candidates up to and including the match.
-                index = chunk.index(match)
-                tried += index + 1
-                bar.update(index + 1)
+        for hit in pool.imap(matcher, recording_iter(), chunksize):
+            candidate = pending.popleft()
+            tried += 1
+            bar.update(1)
+            if hit:
                 bar.close()
+                pool.terminate()  # stop remaining work immediately
                 _clear_resume(resume_path)
-                return CrackResult(found=True, password=match, tried=tried)
-            tried += len(chunk)
-            bar.update(len(chunk))
-            _write_resume(resume_path, tried)
+                return CrackResult(found=True, password=candidate, tried=tried)
+            if resume_path and tried % checkpoint_every == 0:
+                _write_resume(resume_path, tried)
         bar.close()
+        pool.close()
         _clear_resume(resume_path)
         return CrackResult(found=False, password=None, tried=tried)
     finally:
-        if created_pool and pool is not None:
-            pool.close()
-            pool.join()
+        pool.join()  # safe after either terminate() or close()

@@ -32,6 +32,8 @@ jobs:
         run: ruff format --check .
       - name: Pytest
         run: pytest
+      - name: Performance benchmark (AC-5, >=3x on >=4 cores)
+        run: python benchmarks/run.py --candidates 20000 --iterations 400 --log-lines 100000
 
   shellcheck:
     name: ShellCheck

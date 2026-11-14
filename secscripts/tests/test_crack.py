@@ -38,7 +38,7 @@ def test_search_parallel_path():
         EqualsMatcher("077"),
         total=1000,
         workers=2,
-        chunk_size=50,
+        chunksize=8,
     )
     assert result.found
     assert result.password == "077"
@@ -54,7 +54,6 @@ def test_resume_skips_tried_candidates(tmp_path):
         EqualsMatcher("07"),
         total=100,
         workers=1,
-        chunk_size=10,
         resume_path=str(resume),
     )
     assert not result.found
@@ -65,7 +64,6 @@ def test_resume_skips_tried_candidates(tmp_path):
         EqualsMatcher("77"),
         total=100,
         workers=1,
-        chunk_size=10,
         resume_path=str(resume),
     )
     assert result.found and result.password == "77"
