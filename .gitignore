@@ -142,3 +142,9 @@ logs/
 *.dump
 *.pcap
 *.pcapng
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+*.lnk
+System Volume Information/
